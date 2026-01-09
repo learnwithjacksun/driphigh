@@ -41,3 +41,14 @@ interface SelectWithoutIconProps
     value: string;
   }[];
 }
+
+interface CartStore {
+  cart: Product[];
+  addToCart: (product: Product) => void;
+  removeFromCart: (product: Product) => void;
+  clearCart: () => void;
+  getCartTotal: () => number;
+  getCartTotalQuantity: () => number;
+  getCartTotalPrice: () => number;
+  getCartTotalQuantity: () => number;
+}
