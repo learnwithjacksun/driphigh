@@ -146,18 +146,29 @@ export default function Products() {
                   className="bg-secondary p-6 border border-line hover:border-main/30 transition-all"
                 >
                   {/* Product Image */}
-                  <div className="aspect-square bg-background mb-4 overflow-hidden border border-line">
+                  <div className="aspect-square bg-background mb-4 overflow-hidden border border-line relative">
                     {product.images && product.images.length > 0 ? (
-                      <div
-                        className="w-full h-full bg-cover bg-center"
-                        style={{ backgroundImage: `url('${product.images[0]}')` }}
-                      >
-                        <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
-                          <span className="text-muted text-xs font-space uppercase text-center">
+                      <>
+                        <img
+                          src={product.images[0]}
+                          alt={product.name}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            const img = e.target as HTMLImageElement;
+                            img.style.display = "none";
+                            const placeholder = img.nextElementSibling as HTMLElement;
+                            if (placeholder) {
+                              placeholder.style.display = "flex";
+                            }
+                          }}
+                        />
+                        {/* Placeholder (hidden by default, shown on error) */}
+                        <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 hidden items-center justify-center absolute inset-0">
+                          <span className="text-muted text-xs font-space uppercase text-center px-2">
                             {product.name}
                           </span>
                         </div>
-                      </div>
+                      </>
                     ) : (
                       <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
                         <Package size={48} className="text-muted" />
