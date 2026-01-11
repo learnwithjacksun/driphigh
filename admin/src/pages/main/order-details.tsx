@@ -119,7 +119,7 @@ export default function OrderDetails() {
 
           {/* Order Header */}
           <div className="bg-secondary p-6 md:p-8 mb-6">
-            <div className="flex items-start justify-between mb-6">
+            <div className="flex md:items-start justify-between mb-6 gap-4 ">
               <div>
                 <h1 className="text-2xl md:text-3xl font-bold text-main uppercase font-space mb-2">
                   Order Details
@@ -220,22 +220,33 @@ export default function OrderDetails() {
             {/* Product Images */}
             {order.images && order.images.length > 0 && (
               <div className="mt-6">
-                <p className="text-sm text-muted font-space uppercase mb-3">Product Images</p>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <p className="text-sm text-muted font-space uppercase mb-3">
+                  Product Images ({order.images.length})
+                </p>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                   {order.images.map((image, index) => (
                     <div
                       key={index}
-                      className="aspect-square bg-background overflow-hidden border border-line"
+                      className="aspect-square bg-background overflow-hidden border border-line relative"
                     >
-                      <div
-                        className="w-full h-full bg-cover bg-center"
-                        style={{ backgroundImage: `url('${image}')` }}
-                      >
-                        <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
-                          <span className="text-muted text-xs font-space uppercase text-center">
-                            {order.name}
-                          </span>
-                        </div>
+                      <img
+                        src={image}
+                        alt={`${order.name} - Image ${index + 1}`}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          const img = e.target as HTMLImageElement;
+                          img.style.display = "none";
+                          const placeholder = img.nextElementSibling as HTMLElement;
+                          if (placeholder) {
+                            placeholder.style.display = "flex";
+                          }
+                        }}
+                      />
+                      {/* Placeholder (hidden by default, shown on error) */}
+                      <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 hidden items-center justify-center absolute inset-0">
+                        <span className="text-muted text-xs font-space uppercase text-center px-1">
+                          {order.name.substring(0, 15)}
+                        </span>
                       </div>
                     </div>
                   ))}

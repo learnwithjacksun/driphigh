@@ -162,7 +162,7 @@ export default function Orders() {
               <ArrowLeft size={18} />
               <span>Back</span>
             </button>
-            <h1 className="text-3xl md:text-4xl font-bold text-main uppercase font-space mb-2">
+            <h1 className="text-2xl md:text-3xl font-bold text-main uppercase font-space mb-2">
               All Orders
             </h1>
             <p className="text-muted text-sm md:text-base">
@@ -285,17 +285,26 @@ export default function Orders() {
                           {order.images.slice(0, 3).map((image, index) => (
                             <div
                               key={index}
-                              className="w-16 h-16 bg-background overflow-hidden border border-line"
+                              className="w-16 h-16 bg-background overflow-hidden border border-line relative"
                             >
-                              <div
-                                className="w-full h-full bg-cover bg-center"
-                                style={{ backgroundImage: `url('${image}')` }}
-                              >
-                                <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
-                                  <span className="text-muted text-xs font-space uppercase">
-                                    {order.name}
-                                  </span>
-                                </div>
+                              <img
+                                src={image}
+                                alt={`${order.name} - Image ${index + 1}`}
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  const img = e.target as HTMLImageElement;
+                                  img.style.display = "none";
+                                  const placeholder = img.nextElementSibling as HTMLElement;
+                                  if (placeholder) {
+                                    placeholder.style.display = "flex";
+                                  }
+                                }}
+                              />
+                              {/* Placeholder (hidden by default, shown on error) */}
+                              <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 hidden items-center justify-center absolute inset-0">
+                                <span className="text-muted text-xs font-space uppercase text-center px-1">
+                                  {order.name.substring(0, 10)}
+                                </span>
                               </div>
                             </div>
                           ))}

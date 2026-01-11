@@ -16,7 +16,7 @@ export default function Overview() {
 
   const stats = useMemo(() => {
     const totalRevenue = orders
-      .filter((order) => order.paymentStatus === "completed")
+      .filter((order) => order.paymentStatus?.toLowerCase().trim() === "completed")
       .reduce((sum, order) => sum + order.totalPrice, 0);
 
     const pendingOrders = orders.filter((order) => order.status === "pending").length;
