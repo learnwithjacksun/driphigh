@@ -1,5 +1,5 @@
 import { AuthLayout } from "@/layouts";
-import { Mail } from "lucide-react";
+import { Lock, Mail } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { emailSchema, type EmailType } from "@/schemas/auth";
@@ -53,7 +53,7 @@ export default function EmailAuth() {
             placeholder="you@mail.com"
           />
           <InputWithIcon
-            icon={<Mail size={18} />}
+            icon={<Lock size={18} />}
             label="Password *"
             type="password"
             {...register("password")}
