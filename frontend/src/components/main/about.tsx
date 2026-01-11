@@ -50,15 +50,10 @@ export default function About() {
             <div
               className="w-full h-full bg-cover bg-center"
               style={{
-                backgroundImage: "url('/about-image.jpg')",
+                backgroundImage: "url('/hero-1.jpg')",
               }}
             >
-              {/* Placeholder if image doesn't exist */}
-              <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
-                <span className="text-muted text-sm font-space uppercase">
-                  Brand Image
-                </span>
-              </div>
+              
             </div>
             {/* Decorative overlay */}
             <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />

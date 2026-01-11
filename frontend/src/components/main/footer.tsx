@@ -29,10 +29,10 @@ const socialLinks = [
 ];
 
 const contactInfo = {
-  address: "Ekom Iman Flyover, Uyo, Akwa Ibom State, Nigeria",
-  phone: "+234 123 456 7890",
+  address: "28B Agip Road, Agip Car Park (in front of Agip Company), Port Harcourt, Rivers State, Nigeria",
+  phone: "+234 903 174 0688",
   email: "info@driphigh.com",
-  whatsapp: "+2341234567890",
+  whatsapp: "+2349031740688",
 };
 
 export default function Footer() {

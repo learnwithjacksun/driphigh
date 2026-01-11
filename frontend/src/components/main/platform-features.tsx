@@ -64,7 +64,7 @@ const quickActions = [
     icon: Truck,
     title: "Fast Shipping",
     description: "Free shipping on orders over $100",
-    link: "/shipping",
+    link: "/",
   },
 ];
 
