@@ -17,7 +17,7 @@ export default function Cart() {
 
   const totalPrice = getCartTotalPrice();
   const totalQuantity = getCartTotalQuantity();
-  const shippingFee = totalPrice >= 50000 ? 0 : 5000; // Free shipping over ₦50,000
+  const shippingFee = totalPrice >= 50000 ? 0 : 2000; // Free shipping over ₦50,000
   const finalTotal = totalPrice + shippingFee;
 
   // Load Paystack script
