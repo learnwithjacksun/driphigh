@@ -2,119 +2,20 @@ import { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { MainLayout } from "@/layouts";
 import { Search, X, SlidersHorizontal, Grid3x3, List } from "lucide-react";
+import useProduct from "@/hooks/useProduct";
 
-interface Product {
-  id: number;
-  name: string;
-  category: string;
-  price: string;
-  priceValue: number; // For sorting/filtering
-  image: string;
-  isNew?: boolean;
-}
+// Helper function to format price to Nigerian Naira
+const formatPrice = (price: number): string => {
+  return `₦${price.toLocaleString("en-NG")}`;
+};
 
-const allProducts: Product[] = [
-  {
-    id: 1,
-    name: "Classic Street Tee",
-    category: "T-Shirts",
-    price: "₦25,000",
-    priceValue: 25000,
-    image: "/product-1.jpg",
-    isNew: true,
-  },
-  {
-    id: 2,
-    name: "Urban Denim Jacket",
-    category: "Jackets",
-    price: "₦65,000",
-    priceValue: 65000,
-    image: "/product-2.jpg",
-  },
-  {
-    id: 3,
-    name: "Essential Hoodie",
-    category: "Hoodies",
-    price: "₦40,000",
-    priceValue: 40000,
-    image: "/product-3.jpg",
-    isNew: true,
-  },
-  {
-    id: 4,
-    name: "Signature Cargo Pants",
-    category: "Pants",
-    price: "₦45,000",
-    priceValue: 45000,
-    image: "/product-4.jpg",
-  },
-  {
-    id: 5,
-    name: "Oversized Crewneck",
-    category: "Sweatshirts",
-    price: "₦35,000",
-    priceValue: 35000,
-    image: "/product-5.jpg",
-    isNew: true,
-  },
-  {
-    id: 6,
-    name: "Vintage Baseball Cap",
-    category: "Accessories",
-    price: "₦18,000",
-    priceValue: 18000,
-    image: "/product-6.jpg",
-  },
-  {
-    id: 7,
-    name: "Street Joggers",
-    category: "Pants",
-    price: "₦48,000",
-    priceValue: 48000,
-    image: "/product-7.jpg",
-  },
-  {
-    id: 8,
-    name: "Bomber Jacket",
-    category: "Jackets",
-    price: "₦75,000",
-    priceValue: 75000,
-    image: "/product-8.jpg",
-    isNew: true,
-  },
-  {
-    id: 9,
-    name: "Graphic Print Tee",
-    category: "T-Shirts",
-    price: "₦28,000",
-    priceValue: 28000,
-    image: "/product-9.jpg",
-  },
-  {
-    id: 10,
-    name: "Zip-Up Hoodie",
-    category: "Hoodies",
-    price: "₦42,000",
-    priceValue: 42000,
-    image: "/product-10.jpg",
-  },
-  {
-    id: 11,
-    name: "Cargo Shorts",
-    category: "Pants",
-    price: "₦38,000",
-    priceValue: 38000,
-    image: "/product-11.jpg",
-  },
-  {
-    id: 12,
-    name: "Leather Jacket",
-    category: "Jackets",
-    price: "₦95,000",
-    priceValue: 95000,
-    image: "/product-12.jpg",
-  },
-];
+// Helper function to check if product is new (created within last 7 days)
+const isNewProduct = (createdAt: string): boolean => {
+  const createdDate = new Date(createdAt);
+  const now = new Date();
+  const daysDiff = (now.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24);
+  return daysDiff <= 7;
+};
 
 const categories = ["All", "T-Shirts", "Jackets", "Hoodies", "Pants", "Sweatshirts", "Accessories"];
 
@@ -126,25 +27,29 @@ export default function Shop() {
   const [priceRange, setPriceRange] = useState({ min: 0, max: 200000 });
   const [sortBy, setSortBy] = useState<SortOption>("default");
   const [showFilters, setShowFilters] = useState(false);
-  const [hoveredProduct, setHoveredProduct] = useState<number | null>(null);
+  const [hoveredProduct, setHoveredProduct] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+
+  const { useAllProducts } = useProduct();
+  // Get category for API call (or undefined if "All")
+  const apiCategory = selectedCategory === "All" ? undefined : selectedCategory;
+  const { data: allProducts = [], isLoading, error } = useAllProducts(apiCategory, searchQuery || undefined);
 
   // Filter and sort products
   const filteredAndSortedProducts = useMemo(() => {
+    // First filter by price (API doesn't handle price filtering)
     const filtered = allProducts.filter((product) => {
-      const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesCategory = selectedCategory === "All" || product.category === selectedCategory;
-      const matchesPrice = product.priceValue >= priceRange.min && product.priceValue <= priceRange.max;
-      return matchesSearch && matchesCategory && matchesPrice;
+      const matchesPrice = product.price >= priceRange.min && product.price <= priceRange.max;
+      return matchesPrice;
     });
 
     // Sort products
     switch (sortBy) {
       case "price-low":
-        filtered.sort((a, b) => a.priceValue - b.priceValue);
+        filtered.sort((a, b) => a.price - b.price);
         break;
       case "price-high":
-        filtered.sort((a, b) => b.priceValue - a.priceValue);
+        filtered.sort((a, b) => b.price - a.price);
         break;
       case "name-asc":
         filtered.sort((a, b) => a.name.localeCompare(b.name));
@@ -153,11 +58,17 @@ export default function Shop() {
         filtered.sort((a, b) => b.name.localeCompare(a.name));
         break;
       default:
+        // Default: sort by most recent
+        filtered.sort((a, b) => {
+          const dateA = new Date(a.createdAt).getTime();
+          const dateB = new Date(b.createdAt).getTime();
+          return dateB - dateA;
+        });
         break;
     }
 
     return filtered;
-  }, [searchQuery, selectedCategory, priceRange, sortBy]);
+  }, [allProducts, priceRange, sortBy]);
 
   const clearFilters = () => {
     setSearchQuery("");
@@ -174,7 +85,7 @@ export default function Shop() {
         <div className="main">
           {/* Page Header */}
           <div className="mb-8 md:mb-12">
-            <h1 className="text-3xl md:text-5xl font-bold text-main uppercase font-space mb-4">
+            <h1 className="text-2xl md:text-3xl font-bold text-main uppercase font-space mb-4">
               Shop
             </h1>
             <p className="text-muted text-sm md:text-base">
@@ -388,12 +299,26 @@ export default function Shop() {
                 </p>
               </div>
 
-              {filteredAndSortedProducts.length === 0 ? (
+              {isLoading ? (
+                <div className="text-center py-16">
+                  <p className="text-muted text-lg">Loading products...</p>
+                </div>
+              ) : error ? (
+                <div className="text-center py-16">
+                  <p className="text-muted text-lg mb-4">Failed to load products. Please try again later.</p>
+                  <button
+                    onClick={() => window.location.reload()}
+                    className="px-6 py-3 mx-auto bg-main text-background font-space font-semibold uppercase text-sm hover:bg-main/90 transition-colors"
+                  >
+                    Retry
+                  </button>
+                </div>
+              ) : filteredAndSortedProducts.length === 0 ? (
                 <div className="text-center py-16">
                   <p className="text-muted text-lg mb-4">No products found</p>
                   <button
                     onClick={clearFilters}
-                    className="px-6 py-3 bg-main text-background font-space font-semibold uppercase text-sm hover:bg-main/90 transition-colors"
+                    className="px-6 py-3 mx-auto bg-main text-background font-space font-semibold uppercase text-sm hover:bg-main/90 transition-colors"
                   >
                     Clear Filters
                   </button>
@@ -406,69 +331,80 @@ export default function Shop() {
                       : "space-y-6"
                   }
                 >
-                  {filteredAndSortedProducts.map((product) => (
-                    <div
-                      key={product.id}
-                      className={`group relative ${
-                        viewMode === "list" ? "flex gap-6" : ""
-                      }`}
-                      onMouseEnter={() => setHoveredProduct(product.id)}
-                      onMouseLeave={() => setHoveredProduct(null)}
-                    >
-                      {/* Product Image */}
+                  {filteredAndSortedProducts.map((product) => {
+                    const productImage = product.images && product.images.length > 0 ? product.images[0] : "";
+                    const isNew = isNewProduct(product.createdAt);
+                    
+                    return (
                       <div
-                        className={`relative overflow-hidden bg-secondary ${
-                          viewMode === "list" ? "w-48 h-64 flex-shrink-0" : "aspect-[3/4] mb-4"
+                        key={product.id}
+                        className={`group relative ${
+                          viewMode === "list" ? "flex gap-6" : ""
                         }`}
+                        onMouseEnter={() => setHoveredProduct(product.id)}
+                        onMouseLeave={() => setHoveredProduct(null)}
                       >
+                        {/* Product Image */}
                         <div
-                          className="w-full h-full bg-cover bg-center transition-transform duration-500 group-hover:scale-110"
-                          style={{
-                            backgroundImage: `url('${product.image}')`,
-                          }}
-                        >
-                          <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
-                            <span className="text-muted md:text-sm text-xs text-wrap text-center font-space uppercase">
-                              {product.name}
-                            </span>
-                          </div>
-                        </div>
-
-                        {product.isNew && (
-                          <div className="absolute top-4 left-4 px-3 py-1 bg-white text-black text-xs font-space font-semibold uppercase tracking-wider">
-                            New
-                          </div>
-                        )}
-
-
-                        <div
-                          className={`absolute inset-0 bg-black/40 flex items-center justify-center transition-opacity duration-300 ${
-                            hoveredProduct === product.id ? "opacity-100" : "opacity-0"
+                          className={`relative overflow-hidden bg-secondary ${
+                            viewMode === "list" ? "w-48 h-64 flex-shrink-0" : "aspect-[3/4] mb-4"
                           }`}
                         >
-                          <Link
-                            to={`/shop/${product.id}`}
-                            className="px-6 py-3 bg-white text-black font-space font-semibold uppercase text-sm tracking-wider hover:bg-white/90 transition-colors duration-300"
+                          {productImage ? (
+                            <img
+                              src={productImage}
+                              alt={product.name}
+                              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                              onError={(e) => {
+                                // Hide image and show placeholder if it fails to load
+                                (e.target as HTMLImageElement).style.display = "none";
+                              }}
+                            />
+                          ) : null}
+                          {/* Placeholder if image doesn't exist or failed to load */}
+                          {!productImage && (
+                            <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
+                              <span className="text-muted md:text-sm text-xs text-wrap text-center font-space uppercase px-2">
+                                {product.name}
+                              </span>
+                            </div>
+                          )}
+
+                          {isNew && (
+                            <div className="absolute top-4 left-4 px-3 py-1 bg-white text-black text-xs font-space font-semibold uppercase tracking-wider">
+                              New
+                            </div>
+                          )}
+
+                          <div
+                            className={`absolute inset-0 bg-black/40 flex items-center justify-center transition-opacity duration-300 ${
+                              hoveredProduct === product.id ? "opacity-100" : "opacity-0"
+                            }`}
                           >
-                            Quick View
-                          </Link>
+                            <Link
+                              to={`/shop/${product.id}`}
+                              className="px-6 py-3 bg-white text-black font-space font-semibold uppercase text-sm tracking-wider hover:bg-white/90 transition-colors duration-300"
+                            >
+                              Quick View
+                            </Link>
+                          </div>
+                        </div>
+
+                        {/* Product Info */}
+                        <div className={`space-y-1 ${viewMode === "list" ? "flex-1" : ""}`}>
+                          <p className="text-xs text-muted font-space uppercase tracking-wider">
+                            {product.category}
+                          </p>
+                          <h3 className="text-sm md:text-lg font-semibold text-main">
+                            {product.name}
+                          </h3>
+                          <p className="text-lg font-bold text-main font-space">
+                            {formatPrice(product.price)}
+                          </p>
                         </div>
                       </div>
-
-                      {/* Product Info */}
-                      <div className={`space-y-1 ${viewMode === "list" ? "flex-1" : ""}`}>
-                        <p className="text-xs text-muted font-space uppercase tracking-wider">
-                          {product.category}
-                        </p>
-                        <h3 className="text-sm md:text-lg font-semibold text-main">
-                          {product.name}
-                        </h3>
-                        <p className="text-lg font-bold text-main font-space">
-                          {product.price}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>

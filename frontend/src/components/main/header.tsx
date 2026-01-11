@@ -1,14 +1,16 @@
 import { useState } from "react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
-import { Menu, X, ShoppingBag, User } from "lucide-react";
+import { Menu, X, ShoppingBag, UserRound } from "lucide-react";
 import Mobilebar from "./mobilebar";
 import useCart from "@/hooks/useCart";
+import useAuth from "@/hooks/useAuth";
 
 const navigationLinks = [
   { name: "Home", path: "/" },
   { name: "Shop", path: "/shop", isPage: true },
   { name: "About", path: "/about", sectionId: "about" },
   { name: "Contact", path: "/contact", sectionId: "contact" },
+  { name: "Orders", path: "/orders", isPage: true, requiresAuth: true },
 ];
 
 export default function Header() {
@@ -16,9 +18,17 @@ export default function Header() {
   const location = useLocation();
   const navigate = useNavigate();
   const { getCartTotalQuantity } = useCart();
+  const { user } = useAuth();
 
-  const user = true;
   const cartQuantity = getCartTotalQuantity();
+  
+  // Get user initials for avatar
+  const getUserInitials = () => {
+    if (!user) return "";
+    const first = user.firstName?.charAt(0) || "";
+    const last = user.lastName?.charAt(0) || "";
+    return (first + last).toUpperCase() || "U";
+  };
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen((prev) => !prev);
@@ -99,18 +109,24 @@ export default function Header() {
             <div className="flex items-center gap-8">
                 {/* Desktop Navigation */}
                 <div className="hidden md:flex items-center gap-8 border-r-2 border-white/70 pr-8">
-                  {navigationLinks.map((link) => (
-                    <NavLink
-                      key={link.path}
-                      to={link.path}
-                      onClick={(e) => handleNavigation(e, link)}
-                      className={({ isActive }) =>
-                        isActive ? "text-white text-sm font-space uppercase font-semibold hover:text-yellow-400" : "text-white/50 text-sm font-space uppercase font-medium hover:text-yellow-400"
-                      }
-                    >
-                      {link.name}
-                    </NavLink>
-                  ))}
+                  {navigationLinks.map((link) => {
+                    // Only show Orders link if user is logged in
+                    if (link.requiresAuth && !user) {
+                      return null;
+                    }
+                    return (
+                      <NavLink
+                        key={link.path}
+                        to={link.path}
+                        onClick={(e) => handleNavigation(e, link)}
+                        className={({ isActive }) =>
+                          isActive ? "text-white text-sm font-space uppercase font-semibold hover:text-yellow-400" : "text-white/50 text-sm font-space uppercase font-medium hover:text-yellow-400"
+                        }
+                      >
+                        {link.name}
+                      </NavLink>
+                    );
+                  })}
                 </div>
                 {/* Right Side Actions */}
                 <div className="flex items-center gap-4">
@@ -129,21 +145,21 @@ export default function Header() {
                   </Link>
                   {/* User Icon */}
                  {!user && ( <Link
-                    to="/account"
-                    className="flex h-10 w-10 bg-[#212121] hover:bg-[#313131] rounded-full transition-colors duration-200"
+                    to="/auth"
+                    className="center h-10 w-10 bg-[#212121] hover:bg-[#313131] rounded-full transition-colors duration-200"
                     aria-label="Account"
                   >
-                    <User size={20} />
+                    <UserRound size={20} />
                   </Link>)}
 
                   {user && (
                     <Link
-                    to="/profile"
-                    className="flex h-10 w-10 center bg-yellow-500 text-black font-space font-semibold text-sm uppercase rounded-full transition-colors duration-200"
-                    aria-label="Profile"
-                  >
-                   GI
-                  </Link>
+                      to="/profile"
+                      className="flex h-10 w-10 center bg-yellow-500 text-black font-space font-semibold text-sm uppercase rounded-full transition-colors duration-200"
+                      aria-label="Profile"
+                    >
+                      {getUserInitials()}
+                    </Link>
                   )}
                   {/* Mobile Menu Toggle */}
                   <div className="md:hidden">

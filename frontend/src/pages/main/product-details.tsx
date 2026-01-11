@@ -1,139 +1,69 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { MainLayout } from "@/layouts";
 import { ShoppingCart, Minus, Plus, Share2, ArrowLeft, Check } from "lucide-react";
 import useCart from "@/hooks/useCart";
+import useProduct from "@/hooks/useProduct";
 
-interface Product {
-  id: number;
-  name: string;
-  category: string;
-  price: string;
-  priceValue: number;
-  image: string;
-  images?: string[];
-  isNew?: boolean;
-  description?: string;
-  sizes?: string[];
-  colors?: string[];
-}
+// Helper function to format price to Nigerian Naira
+const formatPrice = (price: number): string => {
+  return `₦${price.toLocaleString("en-NG")}`;
+};
 
-// Mock product data - in real app, this would come from API
-const allProducts: Product[] = [
-  {
-    id: 1,
-    name: "Classic Street Tee",
-    category: "T-Shirts",
-    price: "₦25,000",
-    priceValue: 25000,
-    image: "/product-1.jpg",
-    images: ["/product-1.jpg", "/product-1-alt.jpg", "/product-1-back.jpg"],
-    isNew: true,
-    description: "Our signature street tee crafted from premium cotton blend. Features a relaxed fit with a modern streetwear aesthetic. Perfect for everyday wear and layering.",
-    sizes: ["S", "M", "L", "XL", "XXL"],
-    colors: ["Black", "White", "Gray", "Navy"],
-  },
-  {
-    id: 2,
-    name: "Urban Denim Jacket",
-    category: "Jackets",
-    price: "₦65,000",
-    priceValue: 65000,
-    image: "/product-2.jpg",
-    images: ["/product-2.jpg", "/product-2-alt.jpg"],
-    description: "Premium denim jacket with a classic fit. Features quality construction and timeless design that pairs perfectly with any streetwear ensemble.",
-    sizes: ["S", "M", "L", "XL"],
-    colors: ["Blue", "Black"],
-  },
-  {
-    id: 3,
-    name: "Essential Hoodie",
-    category: "Hoodies",
-    price: "₦40,000",
-    priceValue: 40000,
-    image: "/product-3.jpg",
-    images: ["/product-3.jpg", "/product-3-alt.jpg"],
-    isNew: true,
-    description: "Comfortable and stylish hoodie made from soft cotton blend. Features a relaxed fit, adjustable drawstring hood, and front kangaroo pocket.",
-    sizes: ["S", "M", "L", "XL", "XXL"],
-    colors: ["Black", "Gray", "Navy"],
-  },
-  {
-    id: 4,
-    name: "Signature Cargo Pants",
-    category: "Pants",
-    price: "₦45,000",
-    priceValue: 45000,
-    image: "/product-4.jpg",
-    images: ["/product-4.jpg"],
-    description: "Functional cargo pants with multiple pockets. Made from durable fabric with a modern streetwear silhouette.",
-    sizes: ["28", "30", "32", "34", "36"],
-    colors: ["Black", "Olive", "Khaki"],
-  },
-  {
-    id: 5,
-    name: "Oversized Crewneck",
-    category: "Sweatshirts",
-    price: "₦35,000",
-    priceValue: 35000,
-    image: "/product-5.jpg",
-    images: ["/product-5.jpg"],
-    isNew: true,
-    description: "Oversized crewneck sweatshirt with a relaxed fit. Perfect for layering or wearing alone.",
-    sizes: ["S", "M", "L", "XL", "XXL"],
-    colors: ["Gray", "Black", "White"],
-  },
-  {
-    id: 6,
-    name: "Vintage Baseball Cap",
-    category: "Accessories",
-    price: "₦18,000",
-    priceValue: 18000,
-    image: "/product-6.jpg",
-    images: ["/product-6.jpg"],
-    description: "Classic baseball cap with adjustable strap. Features embroidered logo and premium construction.",
-    sizes: ["One Size"],
-    colors: ["Black", "Navy", "Red"],
-  },
-  {
-    id: 7,
-    name: "Street Joggers",
-    category: "Pants",
-    price: "₦48,000",
-    priceValue: 48000,
-    image: "/product-7.jpg",
-    images: ["/product-7.jpg"],
-    description: "Comfortable joggers with tapered fit. Perfect for both casual wear and active lifestyle.",
-    sizes: ["S", "M", "L", "XL"],
-    colors: ["Black", "Gray", "Navy"],
-  },
-  {
-    id: 8,
-    name: "Bomber Jacket",
-    category: "Jackets",
-    price: "₦75,000",
-    priceValue: 75000,
-    image: "/product-8.jpg",
-    images: ["/product-8.jpg"],
-    isNew: true,
-    description: "Stylish bomber jacket with ribbed cuffs and hem. Features a modern streetwear design with quality materials.",
-    sizes: ["S", "M", "L", "XL"],
-    colors: ["Black", "Olive", "Navy"],
-  },
-];
+// Helper function to check if product is new (created within last 7 days)
+const isNewProduct = (createdAt: string): boolean => {
+  const createdDate = new Date(createdAt);
+  const now = new Date();
+  const daysDiff = (now.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24);
+  return daysDiff <= 7;
+};
+
+// Convert string ID to number (for cart compatibility)
+// Uses a simple hash function for MongoDB ObjectIds
+const stringToNumberId = (id: string): number => {
+  // Try direct conversion first
+  const numId = Number(id);
+  if (!isNaN(numId) && numId > 0) {
+    return numId;
+  }
+  // Hash the string ID to a number
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) {
+    const char = id.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32-bit integer
+  }
+  return Math.abs(hash);
+};
+
+// Convert IProduct to Product format for cart
+const convertToCartProduct = (product: IProduct) => {
+  return {
+    id: stringToNumberId(product.id),
+    name: product.name,
+    category: product.category,
+    price: formatPrice(product.price),
+    priceValue: product.price,
+    image: product.images && product.images.length > 0 ? product.images[0] : "",
+    isNew: isNewProduct(product.createdAt),
+    originalId: product.id, // Store original string ID for navigation
+  };
+};
 
 export default function ProductDetails() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { addToCart } = useCart();
+  const { useProduct: useProductQuery, useAllProducts } = useProduct();
+  const { data: product, isLoading, error } = useProductQuery(id || "");
+  const { data: allProducts = [] } = useAllProducts();
+  
   const [selectedImage, setSelectedImage] = useState(0);
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState<"description" | "details" | "shipping">("description");
   const [addedToCart, setAddedToCart] = useState(false);
-
-  const product = allProducts.find((p) => p.id === Number(id));
 
   useEffect(() => {
     if (product) {
@@ -147,11 +77,30 @@ export default function ProductDetails() {
     }
   }, [product]);
 
-  if (!product) {
+  // Get related products
+  const relatedProducts = useMemo(() => {
+    if (!product || !allProducts) return [];
+    return allProducts
+      .filter((p) => p.category === product.category && p.id !== product.id)
+      .slice(0, 4);
+  }, [product, allProducts]);
+
+  if (isLoading) {
+    return (
+      <MainLayout>
+        <div className="min-h-screen bg-background py-16 text-center">
+          <p className="text-muted">Loading product...</p>
+        </div>
+      </MainLayout>
+    );
+  }
+
+  if (error || !product) {
     return (
       <MainLayout>
         <div className="min-h-screen bg-background py-16 text-center">
           <h1 className="text-2xl font-bold text-main mb-4">Product Not Found</h1>
+          <p className="text-muted mb-4">The product you're looking for doesn't exist or has been removed.</p>
           <Link
             to="/shop"
             className="inline-block px-6 py-3 bg-main text-background font-space font-semibold uppercase text-sm hover:bg-main/90 transition-colors"
@@ -163,10 +112,8 @@ export default function ProductDetails() {
     );
   }
 
-  const productImages = product.images || [product.image];
-  const relatedProducts = allProducts
-    .filter((p) => p.category === product.category && p.id !== product.id)
-    .slice(0, 4);
+  const productImages = product.images && product.images.length > 0 ? product.images : [];
+  const isNew = isNewProduct(product.createdAt);
 
   const handleAddToCart = () => {
     if (!product) return;
@@ -174,7 +121,9 @@ export default function ProductDetails() {
       alert("Please select a size");
       return;
     }
-    addToCart(product, quantity, selectedSize || undefined, selectedColor || undefined);
+    // Convert IProduct to Product format for cart
+    const cartProduct = convertToCartProduct(product);
+    addToCart(cartProduct, quantity, selectedSize || undefined, selectedColor || undefined);
     setAddedToCart(true);
     setTimeout(() => setAddedToCart(false), 3000);
   };
@@ -188,7 +137,7 @@ export default function ProductDetails() {
       try {
         await navigator.share({
           title: product.name,
-          text: `Check out ${product.name} - ${product.price}`,
+          text: `Check out ${product.name} - ${formatPrice(product.price)}`,
           url: window.location.href,
         });
       } catch (err) {
@@ -220,19 +169,36 @@ export default function ProductDetails() {
             <div>
               {/* Main Image */}
               <div className="relative aspect-square bg-secondary mb-4 overflow-hidden">
-                <div
-                  className="w-full h-full bg-cover bg-center transition-transform duration-500"
-                  style={{
-                    backgroundImage: `url('${productImages[selectedImage]}')`,
-                  }}
-                >
+                {productImages.length > 0 ? (
+                  <>
+                    <img
+                      src={productImages[selectedImage]}
+                      alt={product.name}
+                      className="w-full h-full object-cover transition-transform duration-500"
+                      onError={(e) => {
+                        const img = e.target as HTMLImageElement;
+                        img.style.display = "none";
+                        const placeholder = img.nextElementSibling as HTMLElement;
+                        if (placeholder) {
+                          placeholder.style.display = "flex";
+                        }
+                      }}
+                    />
+                    {/* Placeholder (hidden by default, shown on error) */}
+                    <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 hidden items-center justify-center">
+                      <span className="text-muted text-sm font-space uppercase px-4 text-center">
+                        {product.name}
+                      </span>
+                    </div>
+                  </>
+                ) : (
                   <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
-                    <span className="text-muted text-sm font-space uppercase">
+                    <span className="text-muted text-sm font-space uppercase px-4 text-center">
                       {product.name}
                     </span>
                   </div>
-                </div>
-                {product.isNew && (
+                )}
+                {isNew && (
                   <div className="absolute top-4 left-4 px-3 py-1 bg-white text-black text-xs font-space font-semibold uppercase tracking-wider">
                     New
                   </div>
@@ -250,11 +216,21 @@ export default function ProductDetails() {
                         selectedImage === index ? "border-main" : "border-transparent"
                       }`}
                     >
-                      <div
-                        className="w-full h-full bg-cover bg-center"
-                        style={{ backgroundImage: `url('${img}')` }}
-                      >
-                        <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300" />
+                      <img
+                        src={img}
+                        alt={`${product.name} view ${index + 1}`}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          const img = e.target as HTMLImageElement;
+                          img.style.display = "none";
+                          const placeholder = img.nextElementSibling as HTMLElement;
+                          if (placeholder) {
+                            placeholder.style.display = "flex";
+                          }
+                        }}
+                      />
+                      <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 hidden items-center justify-center">
+                        <span className="text-muted text-xs font-space uppercase">Image {index + 1}</span>
                       </div>
                     </button>
                   ))}
@@ -273,7 +249,7 @@ export default function ProductDetails() {
                   {product.name}
                 </h1>
                 <p className="text-2xl md:text-3xl font-bold text-main font-space">
-                  {product.price}
+                  {formatPrice(product.price)}
                 </p>
               </div>
 
@@ -427,7 +403,7 @@ export default function ProductDetails() {
                       <p><strong>Material:</strong> Premium Cotton Blend</p>
                       <p><strong>Care:</strong> Machine wash cold, tumble dry low</p>
                       <p><strong>Origin:</strong> Made with care</p>
-                      <p><strong>SKU:</strong> DRI-{product.id.toString().padStart(3, "0")}</p>
+                      <p><strong>SKU:</strong> DRI-{product.id.substring(0, 8).toUpperCase()}</p>
                     </div>
                   )}
                   {activeTab === "shipping" && (
@@ -450,38 +426,54 @@ export default function ProductDetails() {
                 You May Also Like
               </h2>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                {relatedProducts.map((relatedProduct) => (
-                  <Link
-                    key={relatedProduct.id}
-                    to={`/shop/${relatedProduct.id}`}
-                    className="group"
-                  >
-                    <div className="relative aspect-[3/4] bg-secondary mb-4 overflow-hidden">
-                      <div
-                        className="w-full h-full bg-cover bg-center transition-transform duration-500 group-hover:scale-110"
-                        style={{
-                          backgroundImage: `url('${relatedProduct.image}')`,
-                        }}
-                      >
-                        <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
-                          <span className="text-muted text-xs font-space uppercase text-center">
+                {relatedProducts.map((relatedProduct) => {
+                  const relatedImage = relatedProduct.images && relatedProduct.images.length > 0 
+                    ? relatedProduct.images[0] 
+                    : "";
+                  const relatedIsNew = isNewProduct(relatedProduct.createdAt);
+                  
+                  return (
+                    <Link
+                      key={relatedProduct.id}
+                      to={`/shop/${relatedProduct.id}`}
+                      className="group"
+                    >
+                      <div className="relative aspect-[3/4] bg-secondary mb-4 overflow-hidden">
+                        {relatedImage ? (
+                          <img
+                            src={relatedImage}
+                            alt={relatedProduct.name}
+                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                            onError={(e) => {
+                              const img = e.target as HTMLImageElement;
+                              img.style.display = "none";
+                              const placeholder = img.nextElementSibling as HTMLElement;
+                              if (placeholder) {
+                                placeholder.style.display = "flex";
+                              }
+                            }}
+                          />
+                        ) : null}
+                        {/* Placeholder */}
+                        <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 hidden items-center justify-center">
+                          <span className="text-muted text-xs font-space uppercase text-center px-2">
                             {relatedProduct.name}
                           </span>
                         </div>
+                        {relatedIsNew && (
+                          <div className="absolute top-2 left-2 px-2 py-1 bg-white text-black text-xs font-space font-semibold uppercase">
+                            New
+                          </div>
+                        )}
                       </div>
-                      {relatedProduct.isNew && (
-                        <div className="absolute top-2 left-2 px-2 py-1 bg-white text-black text-xs font-space font-semibold uppercase">
-                          New
-                        </div>
-                      )}
-                    </div>
-                    <div className="space-y-1">
-                      <p className="text-xs text-muted font-space uppercase">{relatedProduct.category}</p>
-                      <h3 className="text-sm font-semibold text-main">{relatedProduct.name}</h3>
-                      <p className="text-base font-bold text-main font-space">{relatedProduct.price}</p>
-                    </div>
-                  </Link>
-                ))}
+                      <div className="space-y-1">
+                        <p className="text-xs text-muted font-space uppercase">{relatedProduct.category}</p>
+                        <h3 className="text-sm font-semibold text-main">{relatedProduct.name}</h3>
+                        <p className="text-base font-bold text-main font-space">{formatPrice(relatedProduct.price)}</p>
+                      </div>
+                    </Link>
+                  );
+                })}
               </div>
             </div>
           )}

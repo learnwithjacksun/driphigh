@@ -2,12 +2,18 @@ import { Link, useNavigate } from "react-router-dom";
 import { MainLayout } from "@/layouts";
 import { Minus, Plus, Trash2, ShoppingBag, ArrowLeft, CreditCard, Truck } from "lucide-react";
 import useCart from "@/hooks/useCart";
+import useOrder from "@/hooks/useOrder";
+import useAuth from "@/hooks/useAuth";
 import { useState, useEffect } from "react";
+import { toast } from "sonner";
 
 export default function Cart() {
   const { cart, updateQuantity, removeFromCart, clearCart, getCartTotalPrice, getCartTotalQuantity } = useCart();
+  const { createOrderWithPayment, loading: orderLoading } = useOrder();
+  const { user, checkAuth } = useAuth();
   const navigate = useNavigate();
   const [paymentMethod, setPaymentMethod] = useState<"paystack" | "delivery">("paystack");
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const totalPrice = getCartTotalPrice();
   const totalQuantity = getCartTotalQuantity();
@@ -22,45 +28,115 @@ export default function Cart() {
     document.body.appendChild(script);
 
     return () => {
-      document.body.removeChild(script);
+      if (document.body.contains(script)) {
+        document.body.removeChild(script);
+      }
     };
   }, []);
 
-  const handlePaystackPayment = () => {
-    // Paystack payment integration
-    // In production, this would call your backend API to initialize Paystack payment
-    const handler = (window as any).PaystackPop?.setup({
-      key: "pk_test_YOUR_PUBLIC_KEY", // Replace with your Paystack public key
-      email: "customer@example.com", // Get from user profile
-      amount: finalTotal * 100, // Amount in kobo (lowest currency unit)
-      currency: "NGN",
-      ref: `DRI-${Date.now()}`, // Generate unique reference
-      metadata: {
-        cart_items: cart.map((item) => ({
-          id: item.id,
-          name: item.name,
-          quantity: item.quantity,
-          price: item.priceValue,
-        })),
+  // Check auth on mount
+  useEffect(() => {
+    if (!user) {
+      checkAuth().then((authUser) => {
+        if (!authUser) {
+          toast.error("Please login to place an order");
+          navigate("/auth");
+        }
+      });
+    }
+  }, [user, checkAuth, navigate]);
+
+  const prepareOrderData = () => {
+    if (!user || !user.address) {
+      toast.error("Please complete your profile with delivery address");
+      navigate("/profile");
+      return null;
+    }
+
+    // Combine all cart items into order data
+    const allImages = cart.flatMap((item) => item.image);
+    const allCategories = [...new Set(cart.map((item) => item.category))];
+    const allSizes = cart
+      .map((item) => item.selectedSize)
+      .filter((size): size is string => !!size)
+      .join(", ");
+    const allColors = cart
+      .map((item) => item.selectedColor)
+      .filter((color): color is string => !!color)
+      .join(", ");
+
+    // Create order name from cart items
+    const orderName =
+      cart.length === 1
+        ? cart[0].name
+        : `${cart[0].name}${cart.length > 1 ? ` and ${cart.length - 1} more item${cart.length > 2 ? "s" : ""}` : ""}`;
+
+    return {
+      name: orderName,
+      price: totalPrice,
+      images: allImages,
+      category: allCategories.join(", "),
+      sizes: allSizes || undefined,
+      colors: allColors || undefined,
+      totalPrice: finalTotal,
+      deliveryAddress: {
+        street: user.address.street,
+        city: user.address.city,
+        state: user.address.state,
       },
-      callback: function (response: any) {
-        // Handle successful payment
-        alert("Payment successful! Reference: " + response.reference);
-        clearCart();
-        navigate("/");
-      },
-      onClose: function () {
-        alert("Payment window closed.");
-      },
-    });
-    handler.openIframe();
+    };
   };
 
-  const handlePayOnDelivery = () => {
-    // Handle pay on delivery order
-    alert("Order placed successfully! You will pay on delivery.");
-    clearCart();
-    navigate("/");
+  const handlePaystackPayment = async () => {
+    if (!user) {
+      toast.error("Please login to place an order");
+      navigate("/auth");
+      return;
+    }
+
+    const orderData = prepareOrderData();
+    if (!orderData) return;
+
+    setIsProcessing(true);
+    try {
+      // createOrderWithPayment handles payment and order creation internally
+      // For paystack, it will create the order after successful payment in the callback
+      // The function resolves when payment is successful, order is created in callback
+      await createOrderWithPayment(orderData, "paystack");
+      // Clear cart and navigate - order will be created in the payment callback
+      // The orders page will automatically refetch and show the new order
+      clearCart();
+      navigate("/orders");
+    } catch (error) {
+      console.error("Payment error:", error);
+      // Error is already handled in the hook
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handlePayOnDelivery = async () => {
+    if (!user) {
+      toast.error("Please login to place an order");
+      navigate("/auth");
+      return;
+    }
+
+    const orderData = prepareOrderData();
+    if (!orderData) return;
+
+    setIsProcessing(true);
+    try {
+      await createOrderWithPayment(orderData, "delivery");
+      clearCart();
+      toast.success("Order placed successfully! You will pay on delivery.");
+      navigate("/orders");
+    } catch (error) {
+      console.error("Order creation error:", error);
+      // Error is already handled in the hook
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   if (cart.length === 0) {
@@ -127,25 +203,40 @@ export default function Cart() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Cart Items */}
             <div className="lg:col-span-2 space-y-4">
-              {cart.map((item) => (
-                <div
-                  key={`${item.id}-${item.selectedSize}-${item.selectedColor}`}
-                  className="bg-secondary p-4 md:p-6 flex flex-col md:flex-row gap-4"
-                >
+              {cart.map((item) => {
+                // Use originalId for navigation if available, otherwise use numeric id
+                const productId = item.originalId || item.id.toString();
+                
+                return (
+                  <div
+                    key={`${item.id}-${item.selectedSize}-${item.selectedColor}`}
+                    className="bg-secondary p-4 md:p-6 flex flex-col md:flex-row gap-4"
+                  >
                   {/* Product Image */}
                   <Link
-                    to={`/shop/${item.id}`}
+                    to={`/shop/${productId}`}
                     className="w-full md:w-32 h-32 bg-background flex-shrink-0 overflow-hidden"
                   >
-                    <div
-                      className="w-full h-full bg-cover bg-center"
-                      style={{ backgroundImage: `url('${item.image}')` }}
-                    >
-                      <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
-                        <span className="text-muted text-xs font-space uppercase text-center">
-                          {item.name}
-                        </span>
-                      </div>
+                    {item.image ? (
+                      <img
+                        src={item.image}
+                        alt={item.name}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          const img = e.target as HTMLImageElement;
+                          img.style.display = "none";
+                          const placeholder = img.nextElementSibling as HTMLElement;
+                          if (placeholder) {
+                            placeholder.style.display = "flex";
+                          }
+                        }}
+                      />
+                    ) : null}
+                    {/* Placeholder */}
+                    <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 hidden items-center justify-center">
+                      <span className="text-muted text-xs font-space uppercase text-center px-2">
+                        {item.name}
+                      </span>
                     </div>
                   </Link>
 
@@ -154,7 +245,7 @@ export default function Cart() {
                     <div className="flex items-start justify-between">
                       <div>
                         <Link
-                          to={`/shop/${item.id}`}
+                          to={`/shop/${productId}`}
                           className="text-lg font-semibold text-main hover:text-main/80 transition-colors"
                         >
                           {item.name}
@@ -212,7 +303,8 @@ export default function Cart() {
                     </div>
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
 
             {/* Order Summary */}
@@ -280,18 +372,20 @@ export default function Cart() {
                 {paymentMethod === "paystack" ? (
                   <button
                     onClick={handlePaystackPayment}
-                    className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-main text-background font-space font-semibold uppercase text-sm hover:bg-main/90 transition-colors mb-3"
+                    disabled={isProcessing || orderLoading || !user}
+                    className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-main text-background font-space font-semibold uppercase text-sm hover:bg-main/90 transition-colors mb-3 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <CreditCard size={18} />
-                    <span>Pay Now with Paystack</span>
+                    <span>{isProcessing || orderLoading ? "Processing..." : "Pay Now with Paystack"}</span>
                   </button>
                 ) : (
                   <button
                     onClick={handlePayOnDelivery}
-                    className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-main text-background font-space font-semibold uppercase text-sm hover:bg-main/90 transition-colors mb-3"
+                    disabled={isProcessing || orderLoading || !user}
+                    className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-main text-background font-space font-semibold uppercase text-sm hover:bg-main/90 transition-colors mb-3 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <Truck size={18} />
-                    <span>Place Order (Pay on Delivery)</span>
+                    <span>{isProcessing || orderLoading ? "Placing Order..." : "Place Order (Pay on Delivery)"}</span>
                   </button>
                 )}
 

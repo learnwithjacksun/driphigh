@@ -9,6 +9,7 @@ export interface Product {
   priceValue: number;
   image: string;
   isNew?: boolean;
+  originalId?: string; // Store original string ID for navigation
 }
 
 export interface CartItem extends Product {
@@ -28,7 +29,7 @@ interface CartStore {
   getCartTotalPrice: () => number;
 }
 
-export const useCartStore = create<CartStore>()(
+ const useCartStore = create<CartStore>()(
   persist(
     (set, get) => ({
       cart: [],
@@ -100,3 +101,5 @@ export const useCartStore = create<CartStore>()(
     }
   )
 );
+
+export default useCartStore;

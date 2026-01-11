@@ -1,6 +1,8 @@
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
-import { X, ShoppingBag, User } from "lucide-react";
+import { X, ShoppingBag, User, UserRound } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import useAuth from "@/hooks/useAuth";
+import useCart from "@/hooks/useCart";
 
 interface MobilebarProps {
   isOpen: boolean;
@@ -12,11 +14,16 @@ const navigationLinks = [
   { name: "Shop", path: "/shop", isPage: true },
   { name: "About", path: "/about", sectionId: "about" },
   { name: "Contact", path: "/contact", sectionId: "contact" },
+  { name: "Orders", path: "/orders", isPage: true, requiresAuth: true },
 ];
 
 export default function Mobilebar({ isOpen, onClose }: MobilebarProps) {
   const location = useLocation();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { getCartTotalQuantity } = useCart();
+  
+  const cartQuantity = getCartTotalQuantity();
 
   const handleLinkClick = (e: React.MouseEvent<HTMLAnchorElement>, link: typeof navigationLinks[0]) => {
     // If it's a page link (like Shop), use normal navigation
@@ -114,19 +121,25 @@ export default function Mobilebar({ isOpen, onClose }: MobilebarProps) {
               {/* Navigation Links */}
               <nav className="flex-1 px-6 py-8">
                 <ul className="">
-                  {navigationLinks.map((link) => (
-                    <li key={link.path}>
-                      <NavLink
-                        to={link.path}
-                        onClick={(e) => handleLinkClick(e, link)}
-                        className={({ isActive }) =>
-                          isActive ? "text-main font-space uppercase font-semibold block hover:bg-secondary py-4 px-4" : "text-muted font-space uppercase font-medium block hover:text-yellow-500 hover:bg-secondary py-4 px-4"
-                        }
-                      >
-                        {link.name}
-                      </NavLink>
-                    </li>
-                  ))}
+                  {navigationLinks.map((link) => {
+                    // Only show Orders link if user is logged in
+                    if (link.requiresAuth && !user) {
+                      return null;
+                    }
+                    return (
+                      <li key={link.path}>
+                        <NavLink
+                          to={link.path}
+                          onClick={(e) => handleLinkClick(e, link)}
+                          className={({ isActive }) =>
+                            isActive ? "text-main font-space uppercase font-semibold block hover:bg-secondary py-4 px-4" : "text-muted font-space uppercase font-medium block hover:text-yellow-500 hover:bg-secondary py-4 px-4"
+                          }
+                        >
+                          {link.name}
+                        </NavLink>
+                      </li>
+                    );
+                  })}
                 </ul>
               </nav>
 
@@ -138,17 +151,27 @@ export default function Mobilebar({ isOpen, onClose }: MobilebarProps) {
                   onClick={onClose}
                 >
                   <ShoppingBag size={20} />
-                  <span className="font-medium">Cart (0)</span>
+                  <span className="font-medium">Cart ({cartQuantity})</span>
                 </Link>
 
-                <Link
-                  to="/account"
+                {!user && (<Link
+                  to="/auth"
                   className="w-full flex items-center justify-center gap-3 p-3 transition-colors duration-200 border border-line rounded-lg hover:border-line"
                   onClick={onClose}
                 >
                   <User size={20} />
                   <span className="font-medium">Account</span>
-                </Link>
+                </Link>)}
+                {user &&(
+                  <Link
+                    to="/profile"
+                    className="w-full flex items-center justify-center gap-3 p-3 transition-colors duration-200 border border-line rounded-lg hover:border-line"
+                    onClick={onClose}
+                  >
+                    <UserRound size={20} />
+                    <span className="font-medium">Profile</span>
+                  </Link>
+                )}
               </div>
             </div>
           </motion.div>
