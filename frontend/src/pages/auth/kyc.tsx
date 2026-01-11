@@ -1,11 +1,14 @@
 import { useNavigate } from "react-router-dom";
 import { AuthLayout } from "@/layouts";
 import { ArrowLeft } from "lucide-react";
-import { ButtonWithLoader, InputWithoutIcon } from "@/components/ui";
+import { ButtonWithLoader, InputWithoutIcon, SelectWithoutIcon } from "@/components/ui";
 import { type KYCType, kycSchema } from "@/schemas/auth";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import useAuth from "@/hooks/useAuth";
+import { Country, State, City } from "country-state-city";
+import type { ICountry, IState, ICity } from "country-state-city";
+import { useEffect, useMemo } from "react";
 
 export default function KYC() {
   const navigate = useNavigate();
@@ -14,10 +17,61 @@ export default function KYC() {
   const {
     register,
     handleSubmit,
+    setValue,
+    watch,
     formState: { errors },
   } = useForm<KYCType>({
     resolver: zodResolver(kycSchema),
+    defaultValues: {
+      address: {
+        country: "Nigeria",
+      },
+    },
   });
+
+  // Get Nigeria country code
+  const nigeria = useMemo(() => {
+    return Country.getAllCountries().find((c: ICountry) => c.name === "Nigeria");
+  }, []);
+
+  // Get all Nigerian states
+  const nigerianStates = useMemo(() => {
+    if (!nigeria) return [];
+    return State.getStatesOfCountry(nigeria.isoCode).map((state: IState) => ({
+      label: state.name,
+      value: state.name,
+    }));
+  }, [nigeria]);
+
+  // Watch selected state
+  const selectedState = watch("address.state");
+
+  // Get cities filtered by selected state
+  const stateCities = useMemo(() => {
+    if (!selectedState || !nigeria) return [];
+    
+    // Find the state by name
+    const state = State.getStatesOfCountry(nigeria.isoCode).find(
+      (s: IState) => s.name === selectedState
+    );
+    
+    if (!state) return [];
+    
+    // Get cities for that state
+    const cities = City.getCitiesOfState(nigeria.isoCode, state.isoCode);
+    return cities.map((city: ICity) => ({
+      label: city.name,
+      value: city.name,
+    }));
+  }, [selectedState, nigeria]);
+
+  // Reset city when state changes
+  useEffect(() => {
+    if (selectedState) {
+      setValue("address.city", "");
+    }
+  }, [selectedState, setValue]);
+  
   
   const onSubmit = async (data: KYCType) => {
     await kyc(data);
@@ -60,37 +114,43 @@ export default function KYC() {
               error={errors.phone?.message}
               className="bg-secondary"
             />
-            <InputWithoutIcon
+            <SelectWithoutIcon
               label="Country *"
-              type="text"
               {...register("address.country")}
               error={errors.address?.country?.message}
+              options={[{ label: "Nigeria", value: "Nigeria" }]}
+              defaultValue="Nigeria"
               className="bg-secondary"
+              disabled
             />
           </div>
 
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <SelectWithoutIcon
+              label="State *"
+              {...register("address.state")}
+              error={errors.address?.state?.message}
+              options={nigerianStates}
+              defaultValue="Select State"
+              className="bg-secondary"
+            />
+            <SelectWithoutIcon
+              label="City *"
+              {...register("address.city")}
+              error={errors.address?.city?.message}
+              options={stateCities}
+              defaultValue={selectedState ? "Select City" : "Select State First"}
+              className="bg-secondary"
+              disabled={!selectedState}
+            />
+          </div>
           <div>
             <InputWithoutIcon
               label="Street Address *"
               type="text"
               {...register("address.street")}
               error={errors.address?.street?.message}
-              className="bg-secondary"
-            />
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <InputWithoutIcon
-              label="City *"
-              type="text"
-              {...register("address.city")}
-              error={errors.address?.city?.message}
-              className="bg-secondary"
-            />
-            <InputWithoutIcon
-              label="State *"
-              type="text"
-              {...register("address.state")}
-              error={errors.address?.state?.message}
               className="bg-secondary"
             />
           </div>

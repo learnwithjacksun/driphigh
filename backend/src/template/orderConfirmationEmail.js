@@ -26,7 +26,7 @@ export const orderConfirmationEmail = (orderData) => {
                     <!-- Header -->
                     <tr>
                         <td style="background-color: #000000; padding: 40px 30px; text-align: center;">
-                            <img src="https://driphigh.vercel.app/logo.jpeg" alt="Driphigh Logo" style="max-width: 150px; height: auto; margin-bottom: 20px;">
+                            <img src="https://www.driphigh.com/logo.jpeg" alt="Driphigh Logo" style="max-width: 150px; height: auto; margin-bottom: 20px;">
                             <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;">
                                 Driphigh
                             </h1>
@@ -156,7 +156,7 @@ export const orderConfirmationEmail = (orderData) => {
                             <table role="presentation" style="width: 100%; border-collapse: collapse; margin: 30px 0;">
                                 <tr>
                                     <td align="center">
-                                        <a href="https://driphigh.vercel.app/orders" style="display: inline-block; background-color: #000000; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 4px; font-weight: 600; font-size: 16px; border: 2px solid #000000;">
+                                        <a href="https://www.driphigh.com/orders" style="display: inline-block; background-color: #000000; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 4px; font-weight: 600; font-size: 16px; border: 2px solid #000000;">
                                             View Order Details
                                         </a>
                                     </td>
@@ -177,7 +177,7 @@ export const orderConfirmationEmail = (orderData) => {
                                 </a>
                             </p>
                             <p style="margin: 15px 0 0; color: #ffffff; font-size: 12px; opacity: 0.8; line-height: 1.6;">
-                                Visit us at: <a href="https://driphigh.vercel.app" style="color: #ffffff; text-decoration: underline;">driphigh.vercel.app</a><br>
+                                Visit us at: <a href="https://www.driphigh.com" style="color: #ffffff; text-decoration: underline;">www.driphigh.com</a><br>
                                 © ${new Date().getFullYear()} Driphigh. All rights reserved.
                             </p>
                         </td>

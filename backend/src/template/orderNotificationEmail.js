@@ -26,7 +26,7 @@ export const orderNotificationEmail = (orderData) => {
                     <!-- Header -->
                     <tr>
                         <td style="background-color: #000000; padding: 40px 30px; text-align: center;">
-                            <img src="https://driphigh.vercel.app/logo.jpeg" alt="Driphigh Logo" style="max-width: 150px; height: auto; margin-bottom: 20px;">
+                            <img src="https://www.driphigh.com/logo.jpeg" alt="Driphigh Logo" style="max-width: 150px; height: auto; margin-bottom: 20px;">
                             <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;">
                                 Driphigh Admin
                             </h1>
@@ -171,6 +171,17 @@ export const orderNotificationEmail = (orderData) => {
                                     <li>Ensure payment is confirmed before shipping</li>
                                 </ul>
                             </div>
+
+                            <!-- CTA Button -->
+                            <table role="presentation" style="width: 100%; border-collapse: collapse; margin: 30px 0;">
+                                <tr>
+                                    <td align="center">
+                                        <a href="https://admin.driphigh.com/orders" style="display: inline-block; background-color: #000000; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 4px; font-weight: 600; font-size: 16px; border: 2px solid #000000;">
+                                            View Order in Admin Dashboard
+                                        </a>
+                                    </td>
+                                </tr>
+                            </table>
                         </td>
                     </tr>
 

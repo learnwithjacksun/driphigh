@@ -9,13 +9,13 @@ const SelectWithoutIcon = ({
 }: SelectWithoutIconProps) => {
   return (
     <div className="space-y-2">
-      <label htmlFor={props.id} className="text-sm text-muted font-medium">
+      <label htmlFor={props.id} className="block text-sm font-semibold text-main uppercase font-space mb-2">
         {label}
       </label>
       <div className="relative mt-1">
         <select
           {...props}
-          className={`px-4 h-11 w-full rounded-lg text-sm border border-line focus:border-main appearance-none  ${props.className}`}
+          className={`h-12 w-full  px-4 text-sm border border-line focus:border-main appearance-none ${props.className}`}
         >
           <option value="">{defaultValue || `Select ${label}`}</option>
           {options.map((option) => (

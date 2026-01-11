@@ -17,6 +17,7 @@
     "aos": "^2.3.4",
     "axios": "^1.11.0",
     "clsx": "^2.1.1",
+    "country-state-city": "^3.2.1",
     "framer-motion": "^12.23.9",
     "lucide-react": "^0.526.0",
     "react": "^19.1.0",
