@@ -155,7 +155,7 @@ export default function OrderDetails() {
                 Payment: {order.paymentStatus}
               </span>
               <span className="px-3 py-1 rounded-full text-xs font-space font-semibold uppercase border bg-background text-main">
-                {order.paymentMethod === "paystack" ? "Paystack" : "Cash on Delivery"}
+                {order.paymentMethod !== "paystack" ? "Paystack" : "Cash on Delivery"}
               </span>
             </div>
 
