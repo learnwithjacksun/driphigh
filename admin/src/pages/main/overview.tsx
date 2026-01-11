@@ -16,7 +16,7 @@ export default function Overview() {
 
   const stats = useMemo(() => {
     const totalRevenue = orders
-      .filter((order) => order.paymentStatus?.toLowerCase().trim() === "completed")
+      .filter((order) => order.paymentStatus === "completed")
       .reduce((sum, order) => sum + order.totalPrice, 0);
 
     const pendingOrders = orders.filter((order) => order.status === "pending").length;
@@ -100,17 +100,17 @@ export default function Overview() {
   const getStatusColor = (status: OrderStatus) => {
     switch (status) {
       case "pending":
-        return "bg-yellow-500/10 text-yellow-600 border-yellow-500/20";
+        return "bg-yellow-500/10 text-yellow-600 ";
       case "processing":
-        return "bg-blue-500/10 text-blue-600 border-blue-500/20";
+        return "bg-blue-500/10 text-blue-600 ";
       case "shipped":
-        return "bg-purple-500/10 text-purple-600 border-purple-500/20";
+        return "bg-purple-500/10 text-purple-600";
       case "delivered":
-        return "bg-green-500/10 text-green-600 border-green-500/20";
+        return "bg-green-500/10 text-green-600";
       case "cancelled":
-        return "bg-red-500/10 text-red-600 border-red-500/20";
+        return "bg-red-500/10 text-red-600";
       default:
-        return "bg-gray-500/10 text-gray-600 border-gray-500/20";
+        return "bg-gray-500/10 text-gray-600";
     }
   };
 
@@ -142,7 +142,7 @@ export default function Overview() {
                 className="bg-secondary p-6 border border-line hover:border-main/30 transition-all"
               >
                 <div className="flex items-center justify-between mb-4">
-                  <div className={`p-3 rounded-lg ${stat.color} border`}>
+                  <div className={`p-3 rounded-lg ${stat.color} `}>
                     <stat.icon size={24} />
                   </div>
                   <span className="text-xs text-muted font-space uppercase">{stat.change}</span>
