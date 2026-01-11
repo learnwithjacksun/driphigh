@@ -29,7 +29,7 @@ export default function About() {
     <section id="about" className="py-16 md:py-24 bg-background">
       <div className="main">
         {/* Section Header */}
-        <div className="text-center mb-12 md:mb-16">
+        <div data-aos="fade-up" className="text-center mb-12 md:mb-16">
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-black/5 rounded-full mb-4">
             <span className="text-xs md:text-sm font-space uppercase tracking-wider text-main">
               Our Story
@@ -46,7 +46,7 @@ export default function About() {
         {/* Main Content - Split Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12 items-center mb-16">
           {/* Image Section */}
-          <div className="relative h-[400px] md:h-[500px] lg:h-[600px] overflow-hidden bg-secondary">
+          <div data-aos="fade-up" className="relative h-[400px] md:h-[500px] lg:h-[600px] overflow-hidden bg-secondary">
             <div
               className="w-full h-full bg-cover bg-center"
               style={{
@@ -60,7 +60,7 @@ export default function About() {
           </div>
 
           {/* Content Section */}
-          <div className="space-y-6 md:space-y-8">
+          <div data-aos="fade-up" className="space-y-6 md:space-y-8">
             {/* Brand Tagline */}
             <div>
               <h3 className="text-2xl md:text-4xl font-bold text-main uppercase font-space mb-4">
@@ -117,6 +117,8 @@ export default function About() {
             return (
               <div
                 key={index}
+                data-aos="fade-up"
+                data-aos-delay={index * 100}
                 className="group p-6 md:p-8 bg-secondary hover:bg-secondary/80 transition-all duration-300 border border-line hover:border-main/20"
               >
                 <div className="mb-4">
@@ -124,10 +126,10 @@ export default function About() {
                     <Icon size={24} className="md:w-7 md:h-7" />
                   </div>
                 </div>
-                <h4 className="text-lg md:text-xl font-semibold text-main uppercase font-space mb-3">
+                <h4 data-aos="fade-up" data-aos-delay={index * 100} className="text-lg md:text-xl font-semibold text-main uppercase font-space mb-3">
                   {value.title}
                 </h4>
-                <p className="text-sm md:text-base text-muted leading-relaxed">
+                <p data-aos="fade-up" data-aos-delay={index * 100} className="text-sm md:text-base text-muted leading-relaxed">
                   {value.description}
                 </p>
               </div>

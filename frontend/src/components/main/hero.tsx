@@ -44,14 +44,14 @@ export default function Hero() {
       <div className="relative z-10 h-full flex items-center justify-center px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl w-full text-center space-y-8 animate-fade-in relative">
           {/* Badge/Tag */}
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-md rounded-full border border-white/20">
+          <div data-aos="fade-up" className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-md rounded-full border border-white/20">
             <span className="text-xs md:text-sm font-space uppercase tracking-wider text-white/90">
-              New Collection 2024
+              New Collection {new Date().getFullYear()}
             </span>
           </div>
 
           {/* Main Heading */}
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white uppercase font-space leading-tight tracking-tight">
+          <h1 data-aos="fade-up" className="text-4xl md:text-5xl lg:text-6xl font-bold text-white uppercase font-space leading-tight tracking-tight">
             <span className="block">Wear Your</span>
             <span className="block bg-gradient-to-r from-white via-white to-white/80 bg-clip-text text-transparent">
               Identity
@@ -59,14 +59,14 @@ export default function Hero() {
           </h1>
 
           {/* Subheading */}
-          <p className="text-lg sm:text-xl md:text-2xl text-white/90 max-w-2xl mx-auto font-light leading-relaxed">
+          <p data-aos="fade-up" className="text-lg sm:text-xl md:text-2xl text-white/90 max-w-2xl mx-auto font-light leading-relaxed">
             Street-inspired fits designed for those who move different.
             <br className="hidden sm:block" /> {" "}
             <span className="text-white/90">Elevate your style, define your story.</span>
           </p>
 
           {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
+          <div data-aos="zoom-in" className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
             <Link
               to="/shop"
               className="group relative w-[200px] btn py-4 bg-white text-black font-space font-semibold uppercase tracking-wider text-sm hover:bg-white/90 transition-all duration-300 flex items-center gap-2 overflow-hidden"

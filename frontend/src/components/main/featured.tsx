@@ -39,7 +39,7 @@ export default function Featured() {
     <section className="py-16 md:py-24 bg-background">
       <div className="main">
         {/* Section Header */}
-        <div className="text-center mb-12 md:mb-16">
+        <div data-aos="fade-up" className="text-center mb-12 md:mb-16">
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-black/5 rounded-full mb-4">
             <span className="text-xs md:text-sm font-space uppercase tracking-wider text-main">
               Featured Collection
@@ -76,6 +76,7 @@ export default function Featured() {
                 <div
                   key={product.id}
                   className="group relative"
+                  data-aos="fade-up"
                   onMouseEnter={() => setHoveredProduct(product.id)}
                   onMouseLeave={() => setHoveredProduct(null)}
                 >

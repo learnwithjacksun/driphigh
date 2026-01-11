@@ -73,16 +73,16 @@ export default function PlatformFeatures() {
     <section className="py-16 md:py-24 bg-secondary">
       <div className="main">
         {/* Section Header */}
-        <div className="text-center mb-12 md:mb-16">
+        <div data-aos="fade-up" className="text-center mb-12 md:mb-16">
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-black/5 rounded-full mb-4">
             <span className="text-xs md:text-sm font-space uppercase tracking-wider text-main">
               Platform Features
             </span>
           </div>
-          <h2 className="text-3xl md:text-5xl font-bold text-main uppercase font-space mb-4">
+          <h2 data-aos="fade-up" className="text-3xl md:text-5xl font-bold text-main uppercase font-space mb-4">
             Everything You Need
           </h2>
-          <p className="text-muted max-w-2xl mx-auto text-sm md:text-base">
+          <p data-aos="fade-up" className="text-muted max-w-2xl mx-auto text-sm md:text-base">
             Discover all the ways you can shop, order, and manage your streetwear collection with ease.
           </p>
         </div>
@@ -94,6 +94,8 @@ export default function PlatformFeatures() {
             return (
               <div
                 key={index}
+                data-aos="fade-up"
+                data-aos-delay={index * 100}
                 className="group relative bg-background p-6 md:p-8 border border-line hover:border-main/30 transition-all duration-300 hover:shadow-lg"
               >
                 {/* Icon */}
@@ -138,6 +140,8 @@ export default function PlatformFeatures() {
               <Link
                 key={index}
                 to={action.link}
+                data-aos="fade-up"
+                data-aos-delay={index * 100}
                 className="group relative bg-background p-6 md:p-8 border-2 border-line hover:border-main transition-all duration-300 flex items-center gap-6"
               >
                 <div className="w-14 h-14 md:w-16 md:h-16 bg-main text-background rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300 flex-shrink-0">
@@ -161,7 +165,7 @@ export default function PlatformFeatures() {
         </div>
 
         {/* Bottom CTA */}
-        <div className="text-center mt-12">
+        <div data-aos="fade-up" className="text-center mt-12">
           <Link
             to="/shop"
             className="group inline-flex items-center gap-2 px-8 py-4 bg-main text-background font-space font-semibold uppercase tracking-wider text-sm hover:bg-main/90 transition-all duration-300"

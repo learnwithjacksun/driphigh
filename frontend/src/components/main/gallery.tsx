@@ -20,7 +20,7 @@ export default function Gallery() {
     <section className="py-12 md:py-16 lg:py-20 bg-background">
       <div className="main">
         {/* Section Header */}
-        <div className="text-center mb-8 md:mb-12">
+        <div data-aos="fade-up" className="text-center mb-8 md:mb-12">
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-main uppercase font-space mb-4">
             Gallery
           </h2>
@@ -30,10 +30,12 @@ export default function Gallery() {
         </div>
 
         {/* Masonry Gallery */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
+        <div data-aos="fade-up" data-aos-delay={100} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
           {galleryImages.map((image, index) => (
             <div
               key={index}
+              data-aos="fade-up"
+              data-aos-delay={index * 100}
               className="break-inside-avoid mb-4 md:mb-6 group cursor-pointer relative overflow-hidden rounded-lg"
               onClick={() => setSelectedImage(image)}
             >
