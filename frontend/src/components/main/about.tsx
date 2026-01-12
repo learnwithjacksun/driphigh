@@ -46,17 +46,18 @@ export default function About() {
         {/* Main Content - Split Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12 items-center mb-16">
           {/* Image Section */}
-          <div data-aos="fade-up" className="relative h-[400px] md:h-[500px] lg:h-[600px] overflow-hidden bg-secondary">
+          <div
+            data-aos="fade-up"
+            className="relative h-[400px] md:h-[500px] lg:h-[600px] overflow-hidden bg-secondary group"
+          >
             <div
-              className="w-full h-full bg-cover bg-center"
+              className="w-full h-full bg-cover bg-center transition-all duration-300 group-hover:rotate-6 group-hover:scale-110 scale-80"
               style={{
-                backgroundImage: "url('/hero-1.jpg')",
+                backgroundImage: "url('/gallery/ga-2.jpeg')",
               }}
-            >
-              
-            </div>
+            />
             {/* Decorative overlay */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent transition-all duration-300" />
           </div>
 
           {/* Content Section */}

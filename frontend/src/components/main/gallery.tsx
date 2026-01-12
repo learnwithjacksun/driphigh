@@ -1,126 +1,211 @@
-import { useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 
 const galleryImages = [
   "/gallery/ga-1.jpeg",
-  "/gallery/ga-2.jpeg",
   "/gallery/ga-3.jpeg",
-  "/gallery/ga-4.jpeg",
   "/gallery/ga-5.jpeg",
-  "/gallery/ga-6.jpeg",
-  "/gallery/ga-8.jpeg",
-  "/gallery/ga-9.jpeg",
-  "/gallery/gap-01.jpeg",
-  "/gallery/gap-7.jpeg",
+  "/gallery/ga.PNG",
+  "/gallery/ga-7.JPEG",
+  "/gallery/ga-1.jpeg",
+  "/gallery/ga-4.jpeg",
 ];
 
 export default function Gallery() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
+  const containerRef = useRef<HTMLDivElement>(null);
+  const rafRef = useRef<number | null>(null);
+  const resumeTimeoutRef = useRef<number | null>(null);
+
+  const isHoveredRef = useRef(false);
+  const isInteractingRef = useRef(false);
+
+  const startXRef = useRef(0);
+  const scrollStartRef = useRef(0);
+  const hasMovedRef = useRef(false);
+
+  const AUTO_SPEED = 0.4;
+
+  // Duplicate images for infinite scroll
+  const images = [...galleryImages, ...galleryImages, ...galleryImages];
+
+  /* ----------------------------------
+     Auto Scroll Loop (single loop)
+  ----------------------------------- */
+  const autoScroll = useCallback(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    if (!isHoveredRef.current && !isInteractingRef.current) {
+      el.scrollLeft += AUTO_SPEED;
+    }
+
+    rafRef.current = requestAnimationFrame(autoScroll);
+  }, []);
+
+  /* ----------------------------------
+     Infinite Scroll Logic
+  ----------------------------------- */
+  const handleScroll = () => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    const third = el.scrollWidth / 3;
+
+    if (el.scrollLeft < third * 0.5) {
+      el.scrollLeft += third;
+    } else if (el.scrollLeft > third * 2.5) {
+      el.scrollLeft -= third;
+    }
+  };
+
+  /* ----------------------------------
+     Pause / Resume Helpers
+  ----------------------------------- */
+  const pauseAutoScroll = () => {
+    isInteractingRef.current = true;
+    if (resumeTimeoutRef.current) {
+      clearTimeout(resumeTimeoutRef.current);
+    }
+  };
+
+  const resumeAutoScroll = () => {
+    resumeTimeoutRef.current = window.setTimeout(() => {
+      isInteractingRef.current = false;
+    }, 1200);
+  };
+
+  /* ----------------------------------
+     Mouse Drag Handling
+  ----------------------------------- */
+  const handleMouseDown = (e: React.MouseEvent) => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    pauseAutoScroll();
+    hasMovedRef.current = false;
+
+    startXRef.current = e.pageX;
+    scrollStartRef.current = el.scrollLeft;
+
+    el.style.cursor = "grabbing";
+
+    const handleMove = (ev: MouseEvent) => {
+      hasMovedRef.current = true;
+      el.scrollLeft = scrollStartRef.current - (ev.pageX - startXRef.current);
+    };
+
+    const handleUp = () => {
+      el.style.cursor = "grab";
+      document.removeEventListener("mousemove", handleMove);
+      document.removeEventListener("mouseup", handleUp);
+      resumeAutoScroll();
+    };
+
+    document.addEventListener("mousemove", handleMove);
+    document.addEventListener("mouseup", handleUp);
+  };
+
+  /* ----------------------------------
+     Wheel / Trackpad
+  ----------------------------------- */
+  const handleWheel = () => {
+    pauseAutoScroll();
+    resumeAutoScroll();
+  };
+
+  /* ----------------------------------
+     Init
+  ----------------------------------- */
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    el.scrollLeft = el.scrollWidth / 3;
+    rafRef.current = requestAnimationFrame(autoScroll);
+
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      if (resumeTimeoutRef.current) clearTimeout(resumeTimeoutRef.current);
+    };
+  }, [autoScroll]);
+
   return (
-    <section className="py-12 md:py-16 lg:py-20 bg-background">
-      <div className="main">
-        {/* Section Header */}
-        <div data-aos="fade-up" className="text-center mb-8 md:mb-12">
-          <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-main uppercase font-space mb-4">
-            Gallery
+    <section className="py-16 bg-background">
+      {/* Header */}
+      <div data-aos="fade-up" className="text-center mb-12 md:mb-16">
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-black/5 rounded-full mb-4">
+            <span className="text-xs md:text-sm font-space uppercase tracking-wider text-main">
+              Gallery
+            </span>
+          </div>
+          <h2 className="text-3xl md:text-5xl font-bold text-main uppercase font-space mb-4">
+            Our Gallery
           </h2>
-          <p className="text-muted text-sm md:text-base max-w-2xl mx-auto">
-            Explore our collection of premium fashion pieces
+          <p className="text-muted max-w-2xl mx-auto text-sm md:text-base">
+            Explore our latest collection and see the quality of our products.
           </p>
         </div>
 
-        {/* Masonry Gallery */}
-        <div data-aos="fade-up" data-aos-delay={100} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
-          {galleryImages.map((image, index) => (
-            <div
-              key={index}
-              data-aos="fade-up"
-              data-aos-delay={index * 100}
-              className="break-inside-avoid mb-4 md:mb-6 group cursor-pointer relative overflow-hidden rounded-lg"
-              onClick={() => setSelectedImage(image)}
-            >
-              <div className="relative overflow-hidden rounded-lg bg-secondary">
-                <img
-                  src={image}
-                  alt={`Gallery image ${index + 1}`}
-                  className="w-full h-auto object-cover transition-transform duration-500 group-hover:scale-110"
-                  loading="lazy"
-                  onError={(e) => {
-                    const img = e.target as HTMLImageElement;
-                    img.style.display = "none";
-                    const placeholder = img.nextElementSibling as HTMLElement;
-                    if (placeholder) {
-                      placeholder.style.display = "flex";
-                    }
-                  }}
-                />
-                {/* Placeholder (hidden by default, shown on error) */}
-                <div className="w-full min-h-[200px] bg-gradient-to-br from-gray-200 to-gray-300 hidden items-center justify-center absolute inset-0">
-                  <span className="text-muted text-sm font-space uppercase">
-                    Image {index + 1}
-                  </span>
-                </div>
-                {/* Overlay on hover */}
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all duration-300 flex items-center justify-center pointer-events-none">
-                  <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    <div className="bg-white/90 rounded-full p-3 transform scale-90 group-hover:scale-100 transition-transform duration-300">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-6 w-6 text-main"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"
-                        />
-                      </svg>
-                    </div>
-                  </div>
-                </div>
-              </div>
+      {/* Gallery */}
+      <div
+        ref={containerRef}
+        onScroll={handleScroll}
+        onMouseDown={handleMouseDown}
+        onWheel={handleWheel}
+        onMouseEnter={() => (isHoveredRef.current = true)}
+        onMouseLeave={() => {
+          isHoveredRef.current = false;
+          resumeAutoScroll();
+        }}
+        className="flex gap-4 overflow-x-auto scrollbar-hide cursor-grab select-none"
+        style={{
+          scrollbarWidth: "none",
+          msOverflowStyle: "none",
+        }}
+      >
+        {images.map((img, index) => (
+          <div
+            key={`${img}-${index}`}
+            className="flex-shrink-0 w-[280px] sm:w-[320px] lg:w-[360px]"
+            onClick={() => {
+              if (!hasMovedRef.current) {
+                setSelectedImage(img);
+              }
+            }}
+          >
+            <div className="overflow-hidden rounded-lg bg-secondary">
+              <img
+                src={img}
+                alt="Gallery item"
+                draggable={false}
+                loading="lazy"
+                className="w-full h-[300px] sm:h-[360px] lg:h-[420px] object-cover transition-transform duration-500 hover:scale-110"
+              />
             </div>
-          ))}
-        </div>
+          </div>
+        ))}
       </div>
 
-      {/* Image Modal */}
+      {/* Hide scrollbar (webkit) */}
+      <style>{`
+        .scrollbar-hide::-webkit-scrollbar {
+          display: none;
+        }
+      `}</style>
+
+      {/* Modal */}
       {selectedImage && (
         <div
           className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"
           onClick={() => setSelectedImage(null)}
         >
-          <div className="relative max-w-7xl max-h-[90vh] w-full h-full flex items-center justify-center">
-            <button
-              onClick={() => setSelectedImage(null)}
-              className="absolute top-4 right-4 text-white hover:text-gray-300 transition-colors z-10 bg-black/50 rounded-full p-2"
-              aria-label="Close"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-6 w-6"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
-            </button>
-            <img
-              src={selectedImage}
-              alt="Gallery view"
-              className="max-w-full max-h-full object-contain rounded-lg"
-              onClick={(e) => e.stopPropagation()}
-            />
-          </div>
+          <img
+            src={selectedImage}
+            alt="Gallery preview"
+            className="max-w-full max-h-full rounded-lg object-contain"
+            onClick={(e) => e.stopPropagation()}
+          />
         </div>
       )}
     </section>
