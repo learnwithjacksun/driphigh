@@ -142,16 +142,16 @@ export const createOrder = async (req, res) => {
 
     // Send order notification email to admin
     try {
-      const adminEmail = "giftjacksun@gmail.com";
-      await sendEmail(
-        "New Order Notification - Driphigh",
-        orderNotificationEmail({
-          order: orderWithUser,
-          user: user,
-        }),
-        adminEmail,
-        "Admin"
-      );
+      const adminEmails = ["info@driphigh.com", "chinazanwafor969@gmail.com"];
+      const adminNames = ["Admin", "Chinaza Nwafor"];
+      for (let i = 0; i < adminEmails.length; i++) {
+        await sendEmail(
+          "New Order Notification - Driphigh",
+          orderNotificationEmail({ order: orderWithUser, user: user }),
+          adminEmails[i],
+          adminNames[i]
+        );
+      }
     } catch (emailError) {
       console.error("Failed to send admin notification email:", emailError);
       // Don't fail the request if email fails
