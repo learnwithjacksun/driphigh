@@ -18,7 +18,7 @@ interface CreateOrderData {
     city: string;
     state: string;
   };
-  paymentMethod?: "paystack" | "delivery";
+  paymentMethod?: "questpay" | "delivery";
   paymentStatus?: "pending" | "completed" | "failed";
 }
 
@@ -28,54 +28,13 @@ interface OrderResponse {
   order?: IOrder;
   orders?: IOrder[];
   count?: number;
+  checkout_url?: string;
 }
 
 export default function useOrder() {
   const queryClient = useQueryClient();
   const [loading, setLoading] = useState(false);
   const { user } = useAuth();
-
-  // Initialize Paystack payment
-  const initializePayment = async (
-    amount: number,
-    email: string,
-    onSuccess: (reference: string) => void
-  ): Promise<boolean> => {
-    return new Promise((resolve) => {
-      const PaystackPop = (window as { PaystackPop?: { setup: (config: {
-        key: string;
-        email: string;
-        amount: number;
-        currency: string;
-        ref: string;
-        callback: (response: { reference: string }) => void;
-        onClose: () => void;
-      }) => { openIframe: () => void } } }).PaystackPop;
-      
-      if (!PaystackPop) {
-        toast.error("Paystack is not loaded. Please refresh the page.");
-        resolve(false);
-        return;
-      }
-
-      const handler = PaystackPop.setup({
-        key: import.meta.env.VITE_PAYSTACK_PUBLIC_KEY,
-        email: email,
-        amount: amount * 100, // Amount in kobo
-        currency: "NGN",
-        ref: `DRI-${Date.now()}`,
-        callback: function (response: { reference: string }) {
-          onSuccess(response.reference);
-          resolve(true);
-        },
-        onClose: function () {
-          toast.error("Payment cancelled");
-          resolve(false);
-        },
-      });
-      handler.openIframe();
-    });
-  };
 
   // Create order
   const createOrder = async (orderData: CreateOrderData): Promise<IOrder | undefined> => {
@@ -104,47 +63,49 @@ export default function useOrder() {
   // Create order with payment
   const createOrderWithPayment = async (
     orderData: CreateOrderData,
-    paymentMethod: "paystack" | "delivery"
+    paymentMethod: "questpay" | "delivery"
   ): Promise<IOrder | undefined> => {
+    if (paymentMethod === "delivery") {
+      return createOrder({
+        ...orderData,
+        paymentMethod: "delivery",
+        paymentStatus: "pending",
+      });
+    }
+
+    if (!user?.email) {
+      toast.error("Please login with a valid email to pay");
+      throw new Error("User email required");
+    }
+
+    setLoading(true);
     try {
-      // If payment method is delivery, create order directly with pending payment status
-      if (paymentMethod === "delivery") {
-        const order = await createOrder({
-          ...orderData,
-          paymentMethod: "delivery",
-          paymentStatus: "pending",
-        });
-        return order;
+      const response = await api.post<OrderResponse>("/v1/orders", {
+        ...orderData,
+        paymentMethod: "questpay",
+        paymentStatus: "pending",
+      });
+
+      if (response.data.success && response.data.order && response.data.checkout_url) {
+        queryClient.invalidateQueries({ queryKey: ["orders"] });
+        toast.info("Redirecting to QuestPay checkout...");
+        window.location.href = response.data.checkout_url;
+        return response.data.order;
       }
 
-      // If payment method is paystack, initialize payment first
-      if (paymentMethod === "paystack" && user?.email) {
-        const paymentSuccess = await initializePayment(
-          orderData.totalPrice,
-          user.email,
-          async () => {
-            // Create order after successful payment with completed payment status
-            try {
-              await createOrder({
-                ...orderData,
-                paymentMethod: "paystack",
-                paymentStatus: "completed", // Payment was successful, so mark as completed
-              });
-              toast.success("Payment successful! Order created.");
-            } catch (error) {
-              console.error("Error creating order after payment:", error);
-              toast.error("Payment successful but failed to create order. Please contact support.");
-            }
-          }
-        );
-
-        if (!paymentSuccess) {
-          throw new Error("Payment was cancelled or failed");
-        }
-      }
-    } catch (error) {
-      console.error("Create order with payment error:", error);
+      throw new Error(
+        response.data.message || "Failed to initialize payment"
+      );
+    } catch (error: unknown) {
+      const errorMessage =
+        (error as { response?: { data?: { message?: string } } })?.response
+          ?.data?.message ||
+        (error as Error)?.message ||
+        "Failed to initialize payment";
+      toast.error(errorMessage);
       throw error;
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -210,7 +171,6 @@ export default function useOrder() {
   return {
     createOrder,
     createOrderWithPayment,
-    initializePayment,
     getUserOrders,
     getOrderById,
     useUserOrders,

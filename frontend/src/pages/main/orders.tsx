@@ -263,7 +263,7 @@ export default function Orders() {
                         </div>
                         <div>
                           <p className="text-muted font-space uppercase text-xs mb-1 flex items-center gap-2">
-                            {order.paymentMethod === "paystack" ? (
+                            {order.paymentMethod === "questpay" ? (
                               <CreditCard size={14} />
                             ) : (
                               <Truck size={14} />
@@ -271,7 +271,7 @@ export default function Orders() {
                             Payment Method
                           </p>
                           <p className="text-main font-space uppercase">
-                            {order.paymentMethod === "paystack" ? "Paystack" : "Pay on Delivery"}
+                            {order.paymentMethod === "questpay" ? "QuestPay" : "Pay on Delivery"}
                           </p>
                         </div>
                         {order.sizes && (

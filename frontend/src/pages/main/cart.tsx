@@ -12,27 +12,13 @@ export default function Cart() {
   const { createOrderWithPayment, loading: orderLoading } = useOrder();
   const { user, checkAuth } = useAuth();
   const navigate = useNavigate();
-  const [paymentMethod, setPaymentMethod] = useState<"paystack" | "delivery">("paystack");
+  const [paymentMethod, setPaymentMethod] = useState<"questpay" | "delivery">("questpay");
   const [isProcessing, setIsProcessing] = useState(false);
 
   const totalPrice = getCartTotalPrice();
   const totalQuantity = getCartTotalQuantity();
   const shippingFee = totalPrice >= 50000 ? 0 : 2000; // Free shipping over ₦50,000
   const finalTotal = totalPrice + shippingFee;
-
-  // Load Paystack script
-  useEffect(() => {
-    const script = document.createElement("script");
-    script.src = "https://js.paystack.co/v1/inline.js";
-    script.async = true;
-    document.body.appendChild(script);
-
-    return () => {
-      if (document.body.contains(script)) {
-        document.body.removeChild(script);
-      }
-    };
-  }, []);
 
   // Check auth on mount
   useEffect(() => {
@@ -87,7 +73,7 @@ export default function Cart() {
     };
   };
 
-  const handlePaystackPayment = async () => {
+  const handleQuestPayPayment = async () => {
     if (!user) {
       toast.error("Please login to place an order");
       navigate("/auth");
@@ -99,17 +85,10 @@ export default function Cart() {
 
     setIsProcessing(true);
     try {
-      // createOrderWithPayment handles payment and order creation internally
-      // For paystack, it will create the order after successful payment in the callback
-      // The function resolves when payment is successful, order is created in callback
-      await createOrderWithPayment(orderData, "paystack");
-      // Clear cart and navigate - order will be created in the payment callback
-      // The orders page will automatically refetch and show the new order
+      await createOrderWithPayment(orderData, "questpay");
       clearCart();
-      navigate("/orders");
     } catch (error) {
       console.error("Payment error:", error);
-      // Error is already handled in the hook
     } finally {
       setIsProcessing(false);
     }
@@ -345,15 +324,15 @@ export default function Cart() {
                     Payment Method
                   </label>
                   <button
-                    onClick={() => setPaymentMethod("paystack")}
+                    onClick={() => setPaymentMethod("questpay")}
                     className={`w-full flex items-center gap-3 p-4 border-2 transition-all ${
-                      paymentMethod === "paystack"
+                      paymentMethod === "questpay"
                         ? "border-main bg-main/10"
                         : "border-line hover:border-main/50"
                     }`}
                   >
                     <CreditCard size={20} />
-                    <span className="font-space font-semibold text-sm">Pay with Paystack</span>
+                    <span className="font-space font-semibold text-sm">Pay with Questpay</span>
                   </button>
                   <button
                     onClick={() => setPaymentMethod("delivery")}
@@ -369,14 +348,14 @@ export default function Cart() {
                 </div>
 
                 {/* Payment Buttons */}
-                {paymentMethod === "paystack" ? (
+                {paymentMethod === "questpay" ? (
                   <button
-                    onClick={handlePaystackPayment}
+                    onClick={handleQuestPayPayment}
                     disabled={isProcessing || orderLoading || !user}
                     className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-main text-background font-space font-semibold uppercase text-sm hover:bg-main/90 transition-colors mb-3 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <CreditCard size={18} />
-                    <span>{isProcessing || orderLoading ? "Processing..." : "Pay Now with Paystack"}</span>
+                    <span>{isProcessing || orderLoading ? "Processing..." : "Pay Now with QuestPay"}</span>
                   </button>
                 ) : (
                   <button

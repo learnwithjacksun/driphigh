@@ -61,14 +61,20 @@ const orderSchema = new Schema(
       },
     },
     paymentMethod: {
-      type: ["paystack", "delivery"],
+      type: String,
+      enum: ["questpay", "delivery"],
       required: true,
-      default: "paystack",
+      default: "questpay",
     },
     paymentStatus: {
-      type: ["pending", "completed", "failed"],
+      type: String,
+      enum: ["pending", "completed", "failed"],
       required: true,
       default: "pending",
+    },
+    reference: {
+      type: String,
+      required: true,
     },
   },
   {

@@ -89,7 +89,7 @@ interface IProduct {
 
 // Order Status Types
 type OrderStatus = "pending" | "processing" | "shipped" | "delivered" | "cancelled";
-type PaymentMethod = "paystack" | "delivery";
+type PaymentMethod = "questpay" | "delivery";
 type PaymentStatus = "pending" | "completed" | "failed";
 
 // Order Interface

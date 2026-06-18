@@ -17,11 +17,11 @@ const userSchema = new Schema(
       required: true,
       unique: true,
     },
-adminPassword: {
-  type: String,
-  required: false,
-  default: null,
-},
+    adminPassword: {
+      type: String,
+      required: false,
+      default: null,
+    },
     phone: {
       type: String,
       required: true,
@@ -94,7 +94,7 @@ adminPassword: {
         return ret;
       },
     },
-  }
+  },
 );
 
 const UserModel = model("User", userSchema);

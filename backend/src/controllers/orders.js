@@ -1,5 +1,7 @@
 import OrderModel from "../model/orders.js";
 import UserModel from "../model/user.js";
+import questpay from "../config/questpay.js";
+import envFile from "../config/env.js";
 import { onError } from "../utils/onError.js";
 import sendEmail from "../config/email.js";
 import { orderConfirmationEmail } from "../template/orderConfirmationEmail.js";
@@ -28,7 +30,7 @@ export const createOrder = async (req, res) => {
     colors,
     totalPrice,
     deliveryAddress,
-    paymentMethod = "paystack",
+    paymentMethod = "questpay",
     paymentStatus,
   } = req.body;
 
@@ -63,10 +65,10 @@ export const createOrder = async (req, res) => {
     }
 
     // Validate payment method
-    if (!["paystack", "delivery"].includes(paymentMethod)) {
+    if (!["questpay", "delivery"].includes(paymentMethod)) {
       return res.status(400).json({
         success: false,
-        message: "Invalid payment method. Must be 'paystack' or 'delivery'",
+        message: "Invalid payment method. Must be 'questpay' or 'delivery'",
       });
     }
 
@@ -78,13 +80,7 @@ export const createOrder = async (req, res) => {
       });
     }
 
-    // Determine payment status based on payment method if not provided
-    let finalPaymentStatus = paymentStatus;
-    if (!finalPaymentStatus) {
-      // If payment method is paystack and paymentStatus is not provided, default to pending
-      // (This should only happen if paymentStatus is explicitly set to "completed" from frontend after successful payment)
-      finalPaymentStatus = paymentMethod === "delivery" ? "pending" : "pending";
-    }
+    const finalPaymentStatus = paymentStatus || "pending";
 
     // Get user to verify they exist
     const user = await UserModel.findById(userId);
@@ -94,6 +90,8 @@ export const createOrder = async (req, res) => {
         message: "User not found",
       });
     }
+
+    const reference = `ORDER-${userId}-${Date.now()}`;
 
     // Create order
     const order = await OrderModel.create({
@@ -114,12 +112,49 @@ export const createOrder = async (req, res) => {
       },
       paymentMethod,
       paymentStatus: finalPaymentStatus,
+      reference,
     });
 
-    // Populate user for email
+    if (paymentMethod === "questpay") {
+      try {
+        const paymentResponse = await questpay.post("/v1/checkout/initialize", {
+          reference,
+          email: user.email,
+          amount: totalPrice,
+          description: `Order payment - ${name}`,
+          metadata: {
+            userId: userId.toString(),
+            orderId: order.id.toString(),
+          },
+          return_url: `${envFile.FRONTEND_URL || "https://www.driphigh.com"}/orders`,
+        });
+
+        if (!paymentResponse.data?.success) {
+          await OrderModel.findByIdAndDelete(order.id);
+          return res.status(400).json({
+            success: false,
+            message:
+              paymentResponse.data?.message || "Failed to initialize payment",
+          });
+        }
+
+        const checkout_url = paymentResponse.data.data.checkout_url;
+
+        return res.status(201).json({
+          success: true,
+          message: "Order created. Complete payment to confirm.",
+          order,
+          checkout_url,
+        });
+      } catch (paymentError) {
+        await OrderModel.findByIdAndDelete(order.id);
+        throw paymentError;
+      }
+    }
+
+    // Populate user for email (delivery orders only — questpay emails sent after webhook)
     const orderWithUser = await OrderModel.findById(order.id).populate(
       "user",
-      "firstName lastName email phone"
     );
 
     // Send order confirmation email to user
@@ -137,7 +172,6 @@ export const createOrder = async (req, res) => {
       );
     } catch (emailError) {
       console.error("Failed to send order confirmation email:", emailError);
-      // Don't fail the request if email fails
     }
 
     // Send order notification email to admin
@@ -154,7 +188,6 @@ export const createOrder = async (req, res) => {
       }
     } catch (emailError) {
       console.error("Failed to send admin notification email:", emailError);
-      // Don't fail the request if email fails
     }
 
     res.status(201).json({
