@@ -7,6 +7,7 @@ import authRouter from "./routes/auth.route.js";
 import ordersRouter from "./routes/orders.route.js";
 import productsRouter from "./routes/products.route.js";
 import userRouter from "./routes/user.route.js";
+import webhookRouter from "./routes/webhook.route.js";
 
 const Port = envFile.PORT || 5000;
 
@@ -49,6 +50,7 @@ app.use("/v1/auth", authRouter);
 app.use("/v1/orders", ordersRouter);
 app.use("/v1/products", productsRouter);
 app.use("/v1/user", userRouter);
+app.use("/v1/webhooks", webhookRouter);
 
 app.listen(Port, () => {
   console.log(`Server is running on port http://localhost:${Port}`);
