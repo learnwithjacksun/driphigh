@@ -8,7 +8,11 @@ const envFile = {
     CLOUDINARY_API_KEY: process.env.CLOUDINARY_API_KEY,
     CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET,
     BREVO_API_KEY: process.env.BREVO_API_KEY,
-    FRONTEND_URL: process.env.FRONTEND_URL,
+    FRONTEND_URL: process.env.FRONTEND_URL || "https://www.driphigh.com",
+    QUESTPAY_API_KEY: process.env.QUESTPAY_API_KEY,
+    QUESTPAY_BASE_URL:
+      process.env.QUESTPAY_BASE_URL ||
+      "https://payments-server.questlabs.cc/api",
 }
 
 export default envFile;

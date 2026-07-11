@@ -332,7 +332,7 @@ export default function Cart() {
                     }`}
                   >
                     <CreditCard size={20} />
-                    <span className="font-space font-semibold text-sm">Pay with Questpay</span>
+                    <span className="font-space font-semibold text-sm">Pay Now</span>
                   </button>
                   <button
                     onClick={() => setPaymentMethod("delivery")}

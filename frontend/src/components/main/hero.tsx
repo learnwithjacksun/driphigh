@@ -3,9 +3,9 @@ import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
 
 const heroImages = [
-  "/gallery/ga-1.jpeg",                                                                            
-  "/gallery/ga-2.jpeg",
-  "/gallery/ga-3.jpeg",
+  "https://cdn.orzn.space/org_01KTR8DGXCZR7D9KQ3Y24ARW1J/personal_assets/mrg51su2-hero-2.jpg",                                                                            
+  "https://cdn.orzn.space/org_01KTR8DGXCZR7D9KQ3Y24ARW1J/personal_assets/mrg52nvw-hero-1.jpg",
+  "https://cdn.orzn.space/org_01KTR8DGXCZR7D9KQ3Y24ARW1J/personal_assets/mrg526hd-hero-3.jpg",
 ];
 
 export default function Hero() {

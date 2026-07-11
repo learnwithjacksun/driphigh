@@ -116,7 +116,20 @@ export const createOrder = async (req, res) => {
     });
 
     if (paymentMethod === "questpay") {
+      if (!envFile.QUESTPAY_API_KEY) {
+        await OrderModel.findByIdAndDelete(order.id);
+        return res.status(500).json({
+          success: false,
+          message: "Payment provider is not configured",
+        });
+      }
+
       try {
+        const frontendUrl = (envFile.FRONTEND_URL || "https://www.driphigh.com").replace(
+          /\/$/,
+          ""
+        );
+
         const paymentResponse = await questpay.post("/v1/checkout/initialize", {
           reference,
           email: user.email,
@@ -126,7 +139,7 @@ export const createOrder = async (req, res) => {
             userId: userId.toString(),
             orderId: order.id.toString(),
           },
-          return_url: `${envFile.FRONTEND_URL || "https://www.driphigh.com"}/orders`,
+          return_url: `${frontendUrl}/orders`,
         });
 
         if (!paymentResponse.data?.success) {
@@ -138,7 +151,15 @@ export const createOrder = async (req, res) => {
           });
         }
 
-        const checkout_url = paymentResponse.data.data.checkout_url;
+        const checkout_url = paymentResponse.data?.data?.checkout_url;
+
+        if (!checkout_url) {
+          await OrderModel.findByIdAndDelete(order.id);
+          return res.status(502).json({
+            success: false,
+            message: "Payment provider did not return a checkout URL",
+          });
+        }
 
         return res.status(201).json({
           success: true,
@@ -148,7 +169,12 @@ export const createOrder = async (req, res) => {
         });
       } catch (paymentError) {
         await OrderModel.findByIdAndDelete(order.id);
-        throw paymentError;
+        const providerMessage =
+          paymentError?.response?.data?.message || paymentError?.message;
+        return res.status(502).json({
+          success: false,
+          message: providerMessage || "Failed to initialize payment",
+        });
       }
     }
 

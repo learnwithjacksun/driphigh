@@ -53,7 +53,7 @@ export default function About() {
             <div
               className="w-full h-full bg-cover bg-center transition-all duration-300 group-hover:rotate-6 group-hover:scale-110 scale-80"
               style={{
-                backgroundImage: "url('/gallery/ga-2.jpeg')",
+                backgroundImage: "url('https://cdn.orzn.space/org_01KTR8DGXCZR7D9KQ3Y24ARW1J/personal_assets/mrg5bgpr-ga-2.jpeg')",
               }}
             />
             {/* Decorative overlay */}

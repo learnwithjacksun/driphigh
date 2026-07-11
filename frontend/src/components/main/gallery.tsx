@@ -1,13 +1,13 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 
 const galleryImages = [
-  "/gallery/ga-1.jpeg",
-  "/gallery/ga-3.jpeg",
-  "/gallery/ga-5.jpeg",
-  "/gallery/ga.PNG",
-  "/gallery/ga-7.JPEG",
-  "/gallery/ga-1.jpeg",
-  "/gallery/ga-4.jpeg",
+  "https://cdn.orzn.space/org_01KTR8DGXCZR7D9KQ3Y24ARW1J/personal_assets/mrg5ai37-ga-1.jpeg",
+  "https://cdn.orzn.space/org_01KTR8DGXCZR7D9KQ3Y24ARW1J/personal_assets/mrg5bqtc-ga-3.jpeg",
+  "https://cdn.orzn.space/org_01KTR8DGXCZR7D9KQ3Y24ARW1J/personal_assets/mrg555vq-ga-5.jpeg",
+  "https://cdn.orzn.space/org_01KTR8DGXCZR7D9KQ3Y24ARW1J/personal_assets/mrg58uet-ga.PNG",
+  "https://cdn.orzn.space/org_01KTR8DGXCZR7D9KQ3Y24ARW1J/personal_assets/mrg58p7y-gap-7.jpeg",
+  "https://cdn.orzn.space/org_01KTR8DGXCZR7D9KQ3Y24ARW1J/personal_assets/mrg5ai37-ga-1.jpeg",
+  "https://cdn.orzn.space/org_01KTR8DGXCZR7D9KQ3Y24ARW1J/personal_assets/mrg58e95-gap-4.JPEG",
 ];
 
 export default function Gallery() {
