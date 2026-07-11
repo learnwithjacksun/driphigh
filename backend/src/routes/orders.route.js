@@ -6,6 +6,7 @@ import {
   getAllOrders,
   updateOrderStatus,
   updatePaymentStatus,
+  confirmPayment,
 } from "../controllers/orders.js";
 import authMiddleware from "../middleware/auth.middleware.js";
 import isAdmin from "../middleware/admin.middleware.js";
@@ -14,6 +15,7 @@ const ordersRouter = Router();
 
 // User routes - require authentication
 ordersRouter.post("/", authMiddleware, createOrder);
+ordersRouter.post("/confirm-payment", authMiddleware, confirmPayment);
 ordersRouter.get("/my-orders", authMiddleware, getUserOrders);
 
 // Admin routes - require authentication and admin role

@@ -32,7 +32,17 @@ app.use(
     allowedOrigins: allowedOrigins,
   })
 );
-app.use(express.json({ limit: "100mb" }));
+app.use(
+  express.json({
+    limit: "100mb",
+    verify: (req, _res, buf) => {
+      // Keep raw body for QuestPay HMAC signature verification
+      if (req.originalUrl?.startsWith("/v1/webhooks")) {
+        req.rawBody = buf.toString("utf8");
+      }
+    },
+  })
+);
 app.use(express.urlencoded({ limit: "10mb", extended: true }));
 
 app.get("/", (req, res) => {

@@ -1,18 +1,21 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { MainLayout } from "@/layouts";
 import { Package, ArrowLeft, Eye, Calendar, MapPin, CreditCard, Truck } from "lucide-react";
 import useOrder from "@/hooks/useOrder";
 import useAuth from "@/hooks/useAuth";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { toast } from "sonner";
 
 export default function Orders() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { user, checkAuth } = useAuth();
   const [selectedStatus, setSelectedStatus] = useState<OrderStatus | "all">("all");
   const [selectedPaymentStatus, setSelectedPaymentStatus] = useState<PaymentStatus | "all">("all");
+  const confirmingRef = useRef(false);
   
-  const { useUserOrders, loading } = useOrder();
-  const { data: orders = [], isLoading } = useUserOrders(
+  const { useUserOrders, confirmPayment } = useOrder();
+  const { data: orders = [], isLoading, refetch } = useUserOrders(
     selectedStatus === "all" ? undefined : selectedStatus,
     selectedPaymentStatus === "all" ? undefined : selectedPaymentStatus
   );
@@ -27,6 +30,34 @@ export default function Orders() {
       });
     }
   }, [user, checkAuth, navigate]);
+
+  // After QuestPay redirect: confirm payment via reference query param
+  useEffect(() => {
+    const reference = searchParams.get("ref");
+    if (!user || !reference || confirmingRef.current) return;
+
+    confirmingRef.current = true;
+    (async () => {
+      try {
+        // Webhook may land slightly after redirect — retry a few times
+        for (let attempt = 0; attempt < 4; attempt++) {
+          const order = await confirmPayment(reference);
+          if (order?.paymentStatus === "completed") {
+            await refetch();
+            break;
+          }
+          await new Promise((r) => setTimeout(r, 1500));
+        }
+        await refetch();
+      } catch (error) {
+        console.error(error);
+        toast.error("Could not confirm payment status. It may update shortly.");
+      } finally {
+        searchParams.delete("ref");
+        setSearchParams(searchParams, { replace: true });
+      }
+    })();
+  }, [user, searchParams, setSearchParams, confirmPayment, refetch]);
 
   const getStatusColor = (status: OrderStatus) => {
     switch (status) {
@@ -137,7 +168,7 @@ export default function Orders() {
           </div>
 
           {/* Orders List */}
-          {isLoading || loading ? (
+          {isLoading ? (
             <div className="text-center py-16">
               <p className="text-muted">Loading orders...</p>
             </div>

@@ -109,6 +109,27 @@ export default function useOrder() {
     }
   };
 
+  // Confirm payment after returning from QuestPay checkout
+  const confirmPayment = async (reference: string): Promise<IOrder | undefined> => {
+    try {
+      const response = await api.post<OrderResponse>("/v1/orders/confirm-payment", {
+        reference,
+      });
+
+      if (response.data.success && response.data.order) {
+        queryClient.invalidateQueries({ queryKey: ["orders"] });
+        if (response.data.order.paymentStatus === "completed") {
+          toast.success("Payment confirmed successfully");
+        }
+        return response.data.order;
+      }
+      return undefined;
+    } catch (error: unknown) {
+      console.error("Confirm payment error:", error);
+      return undefined;
+    }
+  };
+
   // Get user orders
   const getUserOrders = async (status?: OrderStatus, paymentStatus?: PaymentStatus): Promise<IOrder[]> => {
     try {
@@ -171,6 +192,7 @@ export default function useOrder() {
   return {
     createOrder,
     createOrderWithPayment,
+    confirmPayment,
     getUserOrders,
     getOrderById,
     useUserOrders,

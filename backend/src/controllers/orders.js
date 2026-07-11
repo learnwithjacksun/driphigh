@@ -6,6 +6,7 @@ import { onError } from "../utils/onError.js";
 import sendEmail from "../config/email.js";
 import { orderConfirmationEmail } from "../template/orderConfirmationEmail.js";
 import { orderNotificationEmail } from "../template/orderNotificationEmail.js";
+import { completeOrderPayment } from "../services/order.service.js";
 import mongoose from "mongoose";
 
 // Valid order statuses
@@ -139,7 +140,7 @@ export const createOrder = async (req, res) => {
             userId: userId.toString(),
             orderId: order.id.toString(),
           },
-          return_url: `${frontendUrl}/orders`,
+          return_url: `${frontendUrl}/orders?ref=${encodeURIComponent(reference)}`,
         });
 
         if (!paymentResponse.data?.success) {
@@ -405,6 +406,92 @@ export const updateOrderStatus = async (req, res) => {
       message: "Order status updated successfully",
       order,
       previousStatus: oldStatus,
+    });
+  } catch (error) {
+    onError(res, error);
+  }
+};
+
+// Confirm / sync payment after QuestPay return (user-facing fallback to webhook)
+export const confirmPayment = async (req, res) => {
+  const userId = req.user?.id;
+  const reference = req.body?.reference || req.query?.reference;
+
+  try {
+    if (!reference) {
+      return res.status(400).json({
+        success: false,
+        message: "Payment reference is required",
+      });
+    }
+
+    const order = await OrderModel.findOne({ reference, user: userId });
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: "Order not found for this payment reference",
+      });
+    }
+
+    if (order.paymentStatus === "completed") {
+      return res.status(200).json({
+        success: true,
+        message: "Payment already confirmed",
+        order,
+      });
+    }
+
+    // Ask QuestPay for checkout status (try common endpoints)
+    let providerStatus = null;
+    let providerData = null;
+
+    const statusCandidates = [
+      () => questpay.get(`/v1/checkout/${encodeURIComponent(reference)}`),
+      () => questpay.get(`/v1/checkout/status/${encodeURIComponent(reference)}`),
+      () =>
+        questpay.post("/v1/checkout/verify", {
+          reference,
+        }),
+    ];
+
+    for (const request of statusCandidates) {
+      try {
+        const response = await request();
+        if (response?.data) {
+          providerData = response.data?.data || response.data;
+          providerStatus = String(
+            providerData?.status ||
+              providerData?.payment?.providerStatus ||
+              providerData?.checkout?.status ||
+              ""
+          ).toLowerCase();
+          if (providerStatus) break;
+        }
+      } catch {
+        // try next candidate
+      }
+    }
+
+    const paid = ["success", "successful", "completed", "paid"].includes(
+      providerStatus
+    );
+
+    if (paid) {
+      const updated = await completeOrderPayment(order);
+      return res.status(200).json({
+        success: true,
+        message: "Payment confirmed successfully",
+        order: updated,
+      });
+    }
+
+    // Webhook may still be in flight — return current state without failing
+    return res.status(200).json({
+      success: true,
+      message: "Payment is still pending confirmation",
+      order,
+      providerStatus: providerStatus || "unknown",
     });
   } catch (error) {
     onError(res, error);
